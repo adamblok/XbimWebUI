@@ -33,19 +33,17 @@ function xBinaryReader() {
 xBinaryReader.prototype.onloaded = function () { };
 xBinaryReader.prototype.onerror = function () { };
 
-  
 xBinaryReader.prototype.load = function (source) {
     this._position = 0;
-    var self = this;
+    const self = this;
 
-    if (typeof (source) == 'undefined' || source == null) throw 'Source must be defined';
-    if (typeof (source) == 'string') {
-        var xhr;
-        xhr = new XMLHttpRequest();
+    if (typeof (source) === 'undefined' || source === null) throw 'Source must be defined';
+    if (typeof (source) === 'string') {
+        const xhr = new XMLHttpRequest();
         xhr.open("GET", source, true);
         xhr.onreadystatechange = function () {
-            if (xhr.readyState == 4 && xhr.status == 200) {
-                var fReader = new FileReader();
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                const fReader = new FileReader();
                 fReader.onloadend = function () {
                     if (fReader.result) {
                         //set data buffer for next processing
@@ -59,18 +57,20 @@ xBinaryReader.prototype.load = function (source) {
                 fReader.readAsArrayBuffer(xhr.response);
             }
             //throw exception as a warning
-            if (xhr.readyState == 4 && xhr.status != 200) {
-                var msg = 'Failed to fetch binary data from server. Server code: ' + xhr.status +
-                    '. This might be due to CORS policy of your browser if you run this as a local file.';
+            if (xhr.readyState === 4 && xhr.status !== 200) {
+                const msg = 'Failed to fetch binary data from server. Server code: ' + xhr.status + '.' +
+                            'This might be due to CORS policy of your browser if you run this as a local file.';
+
                 if (self.onerror) self.onerror(msg);
                 throw msg;
             }
         };
+
         xhr.responseType = 'blob';
         xhr.send();
     }
     else if (source instanceof Blob || source instanceof File) {
-        var fReader = new FileReader();
+        const fReader = new FileReader();
         fReader.onloadend = function () {
             if (fReader.result) {
                 //set data buffer for next processing
@@ -91,15 +91,17 @@ xBinaryReader.prototype.load = function (source) {
 xBinaryReader.prototype.getIsEOF = function (type, count) {
     if (typeof (this._position) === "undefined")
         throw "Position is not defined";
-    return this._position == this._buffer.byteLength;
+
+    return this._position === this._buffer.byteLength;
 };
 
 xBinaryReader.prototype.read = function (arity, count, ctor) {
-    if(typeof (count) === "undefined") count = 1;
-    var length = arity * count;
-    var offset = this._position;
+    if (typeof (count) === "undefined") count = 1;
+
+    const length = arity * count;
+    const offset = this._position;
+
     this._position += length;
-    var result;
 
     return count === 1 ?
         new ctor(this._buffer.slice(offset, offset + length))[0] :
@@ -109,24 +111,31 @@ xBinaryReader.prototype.read = function (arity, count, ctor) {
 xBinaryReader.prototype.readByte = function (count) {
     return this.read(1, count, Uint8Array);
 };
+
 xBinaryReader.prototype.readUint8 = function (count) {
     return this.read(1, count, Uint8Array);
 };
+
 xBinaryReader.prototype.readInt16 = function (count) {
     return this.read(2, count, Int16Array);
 };
+
 xBinaryReader.prototype.readUint16 = function (count) {
     return this.read(2, count, Uint16Array);
 };
+
 xBinaryReader.prototype.readInt32 = function (count) {
     return this.read(4, count, Int32Array);
 };
+
 xBinaryReader.prototype.readUint32 = function (count) {
     return this.read(4, count, Uint32Array);
 };
+
 xBinaryReader.prototype.readFloat32 = function (count) {
     return this.read(4, count, Float32Array);
 };
+
 xBinaryReader.prototype.readFloat64 = function (count) {
     return this.read(8, count, Float64Array);
 };
@@ -134,69 +143,85 @@ xBinaryReader.prototype.readFloat64 = function (count) {
 //functions for a higher objects like points, colours and matrices
 xBinaryReader.prototype.readChar = function (count) {
     if (typeof (count) === "undefined") count = 1;
-    var bytes = this.readByte(count);
-    var result = new Array(count);
-    for (var i in bytes) {
+
+    const bytes = this.readByte(count);
+    const result = new Array(count);
+
+    for (let i in bytes) {
+        // noinspection JSUnfilteredForInLoop
         result[i] = String.fromCharCode(bytes[i]);
     }
-    return count ===1 ? result[0] : result;
+
+    return count === 1 ? result[0] : result;
 };
 
 xBinaryReader.prototype.readPoint = function (count) {
     if (typeof (count) === "undefined") count = 1;
-    var coords = this.readFloat32(count * 3);
-    var result = new Array(count);
-    for (var i = 0; i < count; i++) {
-        var offset = i * 3 * 4;
+
+    const coords = this.readFloat32(count * 3);
+    const result = new Array(count);
+
+    for (let i = 0; i < count; i++) {
+        const offset = i * 3 * 4;
+
         //only create new view on the buffer so that no new memory is allocated
-        var point = new Float32Array(coords.buffer, offset, 3);
-        result[i] = point;
+        result[i] = new Float32Array(coords.buffer, offset, 3);
     }
+
     return count === 1 ? result[0] : result;
 };
+
 xBinaryReader.prototype.readRgba = function (count) {
     if (typeof (count) === "undefined") count = 1;
-    var values = this.readByte(count * 4);
-    var result = new Array(count);
-    for (var i = 0; i < count ; i++) {
-        var offset = i * 4;
-        var colour = new Uint8Array(values.buffer, offset, 4);
-        result[i] = colour;
+
+    const values = this.readByte(count * 4);
+    const result = new Array(count);
+
+    for (let i = 0; i < count ; i++) {
+        const offset = i * 4;
+        result[i] = new Uint8Array(values.buffer, offset, 4);
     }
+
     return count === 1 ? result[0] : result;
 };
+
 xBinaryReader.prototype.readPackedNormal = function (count) {
     if (typeof (count) === "undefined") count = 1;
-    var values = this.readUint8(count * 2);
-    var result = new Array(count);
-    for (var i = 0; i < count; i++) {
-        var uv = new Uint8Array(values.buffer, i * 2, 2);
-        result[i] = uv;
+
+    const values = this.readUint8(count * 2);
+    const result = new Array(count);
+    for (let i = 0; i < count; i++) {
+        result[i] = new Uint8Array(values.buffer, i * 2, 2);
     }
     return count === 1 ? result[0] : result;
 };
+
 xBinaryReader.prototype.readMatrix4x4 = function (count) {
     if (typeof (count) === "undefined") count = 1;
-    var values = this.readFloat32(count * 16);
-    var result = new Array(count);
-    for (var i = 0; i < count; i++) {
-        var offset = i * 16 * 4;
-        var matrix = new Float32Array(values.buffer, offset, 16);
-        result[i] = matrix;
+
+    const values = this.readFloat32(count * 16);
+    const result = new Array(count);
+
+    for (let i = 0; i < count; i++) {
+        const offset = i * 16 * 4;
+        result[i] = new Float32Array(values.buffer, offset, 16);
     }
     return count === 1 ? result[0] : result;
 };
+
 xBinaryReader.prototype.readMatrix4x4_64 = function (count) {
     if (typeof (count) === "undefined") count = 1;
-    var values = this.readFloat64(count * 16);
-    var result = new Array(count);
-    for (var i = 0; i < count; i++) {
-        var offset = i * 16 * 8;
-        var matrix = new Float64Array(values.buffer, offset, 16);
-        result[i] = matrix;
+
+    const values = this.readFloat64(count * 16);
+    const result = new Array(count);
+
+    for (let i = 0; i < count; i++) {
+        const offset = i * 16 * 8;
+        result[i] = new Float64Array(values.buffer, offset, 16);
     }
     return count === 1 ? result[0] : result;
-};function xModelGeometry() {
+};
+function xModelGeometry() {
     //all this data is to be fed into GPU as attributes
     this.normals = [];
     this.indices = [];
@@ -213,7 +238,7 @@ xBinaryReader.prototype.readMatrix4x4_64 = function (count) {
     this.meter = 1000;
 
     //this will be used to change appearance of the objects
-    //map objects have a format: 
+    //map objects have a format:
     //map = {
     //	productID: int,
     //	type: int,
@@ -224,37 +249,67 @@ xBinaryReader.prototype.readMatrix4x4_64 = function (count) {
     this.productMap = {};
 }
 
+/**
+ * Static counter to keep unique ID of the model handles
+ */
+xModelGeometry._instancesNum = 0;
+
+/**
+ * Container for information about appended models
+ */
+xModelGeometry._appendedModels = [];
+
+/**
+ * Container which keeps product ids
+ */
+xModelGeometry._productIds = [];
+
+xModelGeometry.prototype.findFreeProductId = function (productId) {
+    while (xModelGeometry._productIds.indexOf(productId) !== -1) {
+        productId += Math.round(Math.random() * 10).toString();
+        productId = parseInt(productId);
+    }
+
+    return productId;
+};
+
+xModelGeometry.prototype.getProductIdForAppendedModel = function (appendedModel, productId) {
+    return appendedModel.productIdsMap[productId];
+};
+
 xModelGeometry.prototype.parse = function (binReader) {
-    var br = binReader;
-    var magicNumber = br.readInt32();
-    if (magicNumber != 94132117) throw 'Magic number mismatch.';
-    var version = br.readByte();
-    var numShapes = br.readInt32();
-    var numVertices = br.readInt32();
-    var numTriangles = br.readInt32();
-    var numMatrices = br.readInt32();;
-    var numProducts = br.readInt32();;
-    var numStyles = br.readInt32();;
-    this.meter = br.readFloat32();;
-    var numRegions = br.readInt16();
+    const br = binReader;
+    const magicNumber = br.readInt32();
+    if (magicNumber !== 94132117) throw 'Magic number mismatch.';
 
-
+    const version = br.readByte();
+    const numShapes = br.readInt32();
+    const numVertices = br.readInt32();
+    const numTriangles = br.readInt32();
+    const numMatrices = br.readInt32();
+    const numProducts = br.readInt32();
+    const numStyles = br.readInt32();
+    this.meter = br.readFloat32();
+    const numRegions = br.readInt16();
 
     //set size of arrays to be square usable for texture data
     //TODO: reflect support for floating point textures
-    var square = function (arity, count) {
-        if (typeof (arity) == 'undefined' || typeof (count) == 'undefined') {
+    const square = function (arity, count) {
+        if (typeof (arity) === 'undefined' || typeof (count) === 'undefined') {
             throw 'Wrong arguments';
         }
-        if (count == 0) return 0;
-        var byteLength = count * arity;
-        var imgSide = Math.ceil(Math.sqrt(byteLength / 4));
+
+        if (count === 0) return 0;
+
+        const byteLength = count * arity;
+        let imgSide = Math.ceil(Math.sqrt(byteLength / 4));
+
         //clamp to parity
-        while ((imgSide * 4) % arity != 0) {
+        while ((imgSide * 4) % arity !== 0) {
             imgSide++
         }
-        var result = imgSide * imgSide * 4 / arity;
-        return result;
+
+        return imgSide * imgSide * 4 / arity;
     };
 
     //create target buffers of correct size (avoid reallocation of memory)
@@ -269,18 +324,22 @@ xModelGeometry.prototype.parse = function (binReader) {
     this.matrices = new Float32Array(square(4, numMatrices * 16));
     this.productMap = {};
     this.regions = new Array(numRegions);
+    this.area = {
+        x: [],
+        y: [],
+        z: []
+    };
 
-    var iVertex = 0;
-    var iIndexForward = 0;
-    var iIndexBackward = numTriangles * 3;
-    var iTransform = 0;
-    var iMatrix = 0;
+    let iVertex = 0;
+    let iIndexForward = 0;
+    let iIndexBackward = numTriangles * 3;
+    let iTransform = 0;
+    let iMatrix = 0;
 
-    var stateEnum = xState;
-    var typeEnum = xProductType;
+    const stateEnum = xState;
+    const typeEnum = xProductType;
 
-
-    for (var i = 0; i < numRegions; i++) {
+    for (let i = 0; i < numRegions; i++) {
         this.regions[i] = {
             population: br.readInt32(),
             centre: br.readFloat32(3),
@@ -288,53 +347,72 @@ xModelGeometry.prototype.parse = function (binReader) {
         }
     }
 
-
-    var styleMap = [];
+    const styleMap = [];
     styleMap.getStyle = function(id) {
-        for (var i = 0; i < this.length; i++) {
-            var item = this[i];
-            if (item.id == id) return item;
+        for (let i = 0; i < this.length; i++) {
+            const item = this[i];
+            if (item.id === id) return item;
         }
         return null;
     };
-    var iStyle = 0;
+
+    let iStyle = 0;
     for (iStyle; iStyle < numStyles; iStyle++) {
-        var styleId = br.readInt32();
-        var R = br.readFloat32() * 255;
-        var G = br.readFloat32() * 255;
-        var B = br.readFloat32() * 255;
-        var A = br.readFloat32() * 255;
+        const styleId = br.readInt32();
+        const R = br.readFloat32() * 255;
+        const G = br.readFloat32() * 255;
+        const B = br.readFloat32() * 255;
+        const A = br.readFloat32() * 255;
+
         this.styles.set([R, G, B, A], iStyle * 4);
         styleMap.push({ id: styleId, index: iStyle, transparent: A < 254 });
     }
+
     this.styles.set([255, 255, 255, 255], iStyle * 4);
-    var defaultStyle = { id: -1, index: iStyle, transparent: A < 254 }
+
+    const defaultStyle = { id: -1, index: iStyle, transparent: 255 };
     styleMap.push(defaultStyle);
 
-    for (var i = 0; i < numProducts ; i++) {
-        var productLabel = br.readInt32();
-        var prodType = br.readInt16();
-        var bBox = br.readFloat32(6);
+    // check if model is appended
+    const modelId = this.id;
+    const appendedModel = xModelGeometry._appendedModels[modelId];
 
-        var map = {
+    for (let i = 0; i < numProducts ; i++) {
+        let productLabel = br.readInt32();
+
+        if (appendedModel) {
+            appendedModel.productIdsMap[productLabel] = this.findFreeProductId(productLabel);
+            productLabel = this.getProductIdForAppendedModel(appendedModel, productLabel);
+        }
+
+        const prodType = br.readInt16();
+        const bBox = br.readFloat32(6);
+
+        this.productMap[productLabel] = {
             productID: productLabel,
             type: prodType,
             bBox: bBox,
             spans: []
         };
-        this.productMap[productLabel] = map;
+
+        xModelGeometry._productIds.push(productLabel);
     }
 
-    for (var iShape = 0; iShape < numShapes; iShape++) {
+    for (let iShape = 0; iShape < numShapes; iShape++) {
+        const repetition = br.readInt32();
+        const shapeList = [];
 
-        var repetition = br.readInt32();
-        var shapeList = [];
-        for (var iProduct = 0; iProduct < repetition; iProduct++) {
-            var prodLabel = br.readInt32();
-            var instanceTypeId = br.readInt16();
-            var instanceLabel = br.readInt32();
-            var styleId = br.readInt32();
-            var transformation = null;
+        for (let iProduct = 0; iProduct < repetition; iProduct++) {
+            let prodLabel = br.readInt32();
+
+            if (appendedModel) {
+                prodLabel = this.getProductIdForAppendedModel(appendedModel, prodLabel);
+            }
+
+            const instanceTypeId = br.readInt16();
+            const instanceLabel = br.readInt32();
+            const styleId = br.readInt32();
+            let transformation = null;
 
             if (repetition > 1) {
                 transformation = version === 1 ? br.readFloat32(16) : br.readFloat64(16);
@@ -342,7 +420,7 @@ xModelGeometry.prototype.parse = function (binReader) {
                 iMatrix += 16;
             }
 
-            var styleItem = styleMap.getStyle(styleId);
+            let styleItem = styleMap.getStyle(styleId);
             if (styleItem === null)
                 styleItem = defaultStyle;
 
@@ -356,13 +434,12 @@ xModelGeometry.prototype.parse = function (binReader) {
         }
 
         //read shape geometry
-        var shapeGeom = new xTriangulatedShape();
+        let shapeGeom = new xTriangulatedShape();
         shapeGeom.parse(br);
-
 
         //copy shape data into inner array and set to null so it can be garbage collected
         shapeList.forEach(function (shape) {
-            var iIndex = 0;
+            let iIndex = 0;
             //set iIndex according to transparency either from beginning or at the end
             if (shape.transparent) {
                 iIndex = iIndexBackward - shapeGeom.indices.length;
@@ -371,8 +448,8 @@ xModelGeometry.prototype.parse = function (binReader) {
                 iIndex = iIndexForward;
             }
 
-            var begin = iIndex;
-            var map = this.productMap[shape.pLabel];
+            const begin = iIndex;
+            let map = this.productMap[shape.pLabel];
             if (typeof (map) === "undefined") {
                 //throw "Product hasn't been defined before.";
                 map = {
@@ -386,13 +463,13 @@ xModelGeometry.prototype.parse = function (binReader) {
 
             this.normals.set(shapeGeom.normals, iIndex * 2);
 
-            //switch spaces and openings off by default 
-            var state = map.type == typeEnum.IFCSPACE || map.type == typeEnum.IFCOPENINGELEMENT ?
-                stateEnum.HIDDEN :
-                0xFF; //0xFF is for the default state
+            //switch spaces and openings off by default
+            const state = map.type === typeEnum.IFCSPACE || map.type === typeEnum.IFCOPENINGELEMENT ?
+                  stateEnum.HIDDEN :
+                  0xFF; //0xFF is for the default state
 
             //fix indices to right absolute position. It is relative to the shape.
-            for (var i = 0; i < shapeGeom.indices.length; i++) {
+            for (let i = 0; i < shapeGeom.indices.length; i++) {
                 this.indices[iIndex] = shapeGeom.indices[i] + iVertex / 3;
                 this.products[iIndex] = shape.pLabel;
                 this.styleIndices[iIndex] = shape.style;
@@ -403,12 +480,55 @@ xModelGeometry.prototype.parse = function (binReader) {
                 iIndex++;
             }
 
-            var end = iIndex;
+            const end = iIndex;
             map.spans.push(new Int32Array([begin, end]));
 
             if (shape.transparent) iIndexBackward -= shapeGeom.indices.length;
             else iIndexForward += shapeGeom.indices.length;
         }, this);
+
+        // get area data
+        let j = 0, axis, vertex;
+
+        for (let i in shapeGeom.vertices) {
+            if (!shapeGeom.vertices.hasOwnProperty(i)) {
+                continue;
+            }
+
+            vertex = shapeGeom.vertices[i];
+
+            if (j > 2) {
+                j = 0;
+            }
+
+            switch (j) {
+                case 0: axis = 'x'; break;
+                case 1: axis = 'y'; break;
+                case 2: axis = 'z'; break;
+            }
+
+            if (appendedModel) {
+                if (appendedModel.options.scale) {
+                    shapeGeom.vertices[i] *= appendedModel.options.scale;
+                }
+
+                switch (axis) {
+                    case 'x': shapeGeom.vertices[i] += appendedModel.options.x; break;
+                    case 'y': shapeGeom.vertices[i] += appendedModel.options.y; break;
+                    case 'z': shapeGeom.vertices[i] += appendedModel.options.z; break;
+                }
+            }
+
+            if (this.area[axis][0] === undefined || vertex < this.area[axis][0]) {
+                this.area[axis][0] = vertex;
+            }
+
+            if (this.area[axis][1] === undefined || vertex > this.area[axis][1]) {
+                this.area[axis][1] = vertex;
+            }
+
+            j++;
+        }
 
         //copy geometry and keep track of amount so that we can fix indices to right position
         //this must be the last step to have correct iVertex number above
@@ -428,8 +548,8 @@ xModelGeometry.prototype.parse = function (binReader) {
 //Source has to be either URL of wexBIM file or Blob representing wexBIM file
 xModelGeometry.prototype.load = function (source) {
     //binary reading
-    var br = new xBinaryReader();
-    var self = this;
+    const br = new xBinaryReader();
+    const self = this;
     br.onloaded = function () {
         self.parse(br);
         if (self.onloaded) {
@@ -443,14 +563,15 @@ xModelGeometry.prototype.load = function (source) {
 };
 
 xModelGeometry.prototype.onloaded = function () { };
-xModelGeometry.prototype.onerror = function () { };//this class holds pointers to textures, uniforms and data buffers which 
+xModelGeometry.prototype.onerror = function () { };
+//this class holds pointers to textures, uniforms and data buffers which
 //make up a model in GPU
 
 //gl: WebGL context
 //model: xModelGeometry
 //fpt: bool (floating point texture support)
 function xModelHandle(gl, model, fpt) {
-    if (typeof (gl) == 'undefined' || typeof (model) == 'undefined' || typeof (fpt) == 'undefined') {
+    if (typeof (gl) === 'undefined' || typeof (model) === 'undefined' || typeof (fpt) === 'undefined') {
         throw 'WebGL context and geometry model must be specified';
     }
 
@@ -459,18 +580,13 @@ function xModelHandle(gl, model, fpt) {
     this._fpt = fpt;
 
     /**
-     * unique ID which can be used to identify this handle 
-     */
-    this.id = xModelHandle._instancesNum++;
-
-    /**
      * indicates if this model should be used in a rendering loop or not.
      */
     this.stopped = false;
 
     this.count = model.indices.length;
 
-    //data structure 
+    //data structure
     this.vertexTexture = gl.createTexture();
     this.matrixTexture = gl.createTexture();
     this.styleTexture = gl.createTexture();
@@ -498,8 +614,9 @@ function xModelHandle(gl, model, fpt) {
             this.region = region;
         }
     }, this);
+
     //set default region if no region is defined. This shouldn't ever happen if model contains any geometry.
-    if (typeof (this.region) == 'undefined') {
+    if (typeof (this.region) === 'undefined') {
         this.region = {
             population: 1,
             centre: [0.0, 0.0, 0.0],
@@ -507,11 +624,6 @@ function xModelHandle(gl, model, fpt) {
         }
     }
 }
-
-/**
- * Static counter to keep unique ID of the model handles
- */
-xModelHandle._instancesNum = 0;
 
 //this function sets this model as an active one
 //it needs an argument 'pointers' which contains pointers to
@@ -528,7 +640,7 @@ xModelHandle._instancesNum = 0;
 //	vertexSamplerUniform: null,
 //	styleSamplerUniform: null,
 //	stateStyleSamplerUniform: null,
-//	
+//
 //	vertexTextureSizeUniform: null,
 //	matrixTextureSizeUniform: null,
 //	styleTextureSizeUniform: null,
@@ -536,7 +648,8 @@ xModelHandle._instancesNum = 0;
 xModelHandle.prototype.setActive = function (pointers) {
     if (this.stopped) return;
 
-    var gl = this._gl;
+    const gl = this._gl;
+
     //set predefined textures
     if (this.vertexTextureSize > 0) {
         gl.activeTexture(gl.TEXTURE1);
@@ -590,7 +703,7 @@ xModelHandle.prototype.setActive = function (pointers) {
 xModelHandle.prototype.draw = function (mode) {
     if (this.stopped) return;
 
-    var gl = this._gl;
+    const gl = this._gl;
 
     if (typeof (mode) === "undefined") {
         //draw image frame
@@ -605,18 +718,14 @@ xModelHandle.prototype.draw = function (mode) {
 
     if (mode === "transparent") {
         gl.drawArrays(gl.TRIANGLES, this._model.transparentIndex, this.count - this._model.transparentIndex);
-        return;
     }
-    
 };
-
-
 
 xModelHandle.prototype.drawProduct = function (ID) {
     if (this.stopped) return;
 
-    var gl = this._gl;
-    var map = this.getProductMap(ID);
+    const gl = this._gl;
+    const map = this.getProductMap(ID);
 
     //var i = 3; //3 is for a glass panel
     //gl.drawArrays(gl.TRIANGLES, map.spans[i][0], map.spans[i][1] - map.spans[i][0]);
@@ -629,13 +738,17 @@ xModelHandle.prototype.drawProduct = function (ID) {
 };
 
 xModelHandle.prototype.getProductMap = function (ID) {
-    var map = this._model.productMap[ID];
-    if (typeof (map) !== "undefined") return map;
+    const map = this._model.productMap[ID];
+
+    if (typeof (map) !== "undefined") {
+      return map;
+    }
+
     return null;
 };
 
 xModelHandle.prototype.unload = function () {
-    var gl = this._gl;
+    const gl = this._gl;
 
     gl.deleteTexture(this.vertexTexture);
     gl.deleteTexture(this.matrixTexture);
@@ -655,8 +768,8 @@ xModelHandle.prototype.feedGPU = function () {
         throw 'GPU can bee fed only once. It discards unnecessary data which cannot be restored again.';
     }
 
-    var gl = this._gl;
-    var model = this._model;
+    const gl = this._gl;
+    const model = this._model;
 
     //fill all buffers
     this._bufferData(this.normalBuffer, model.normals);
@@ -670,6 +783,7 @@ xModelHandle.prototype.feedGPU = function () {
     this.vertexTextureSize = this._bufferTexture(this.vertexTexture, model.vertices, 3);
     this.matrixTextureSize = this._bufferTexture(this.matrixTexture, model.matrices, 4);
     this.styleTextureSize = this._bufferTexture(this.styleTexture, model.styles);
+
     //this has a constant size 15 which is defined in vertex shader
     this._bufferTexture(this.stateStyleTexture, this.stateStyle);
 
@@ -692,31 +806,32 @@ xModelHandle.prototype.refreshStyles = function () {
 };
 
 xModelHandle.prototype._bufferData = function (pointer, data) {
-    var gl = this._gl;
+    const gl = this._gl;
     gl.bindBuffer(gl.ARRAY_BUFFER, pointer);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 };
 
 xModelHandle.prototype._bufferTexture = function (pointer, data, arity) {
-    var gl = this._gl;
-    if (data.length == 0) return 0;
+    const gl = this._gl;
+    if (data.length === 0) return 0;
 
     //detect floating point texture support and data type
-    var fp = this._fpt && data instanceof Float32Array;
+    const fp = this._fpt && data instanceof Float32Array;
 
     //compute size of the image (length should be correct already)
-    var size = 0;
-    var maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    let size = 0;
+    const maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+
     if (fp) {
         //recompute to smaller size, but make it +1 to make sure it is all right
         size = Math.ceil(Math.sqrt(Math.ceil(data.length / arity))) + 1;
     }
     else {
-        var dim = Math.sqrt(data.byteLength / 4);
+        const dim = Math.sqrt(data.byteLength / 4);
         size = Math.ceil(dim);
     }
 
-    if (size == 0) return 0;
+    if (size === 0) return 0;
     if (size > maxSize) throw 'Too much data! It cannot fit into the texture.';
 
     gl.bindTexture(gl.TEXTURE_2D, pointer);
@@ -726,25 +841,25 @@ xModelHandle.prototype._bufferTexture = function (pointer, data, arity) {
 
     if (fp) {
         //create new data buffer and fill it in with data
-        var image = null;
-        if (size * size * arity != data.length) {
+        let image = null;
+        if (size * size * arity !== data.length) {
             image = new Float32Array(size * size * arity);
             image.set(data);
-        }
-        else {
+        } else {
             image = data;
         }
-        var type = null;
+
+        let type = null;
         switch (arity) {
             case 1: type = gl.ALPHA; break;
             case 3: type = gl.RGB; break;
             case 4: type = gl.RGBA; break;
         }
         gl.texImage2D(gl.TEXTURE_2D, 0, type, size, size, 0, type, gl.FLOAT, image);
-    }
-    else {
+    } else {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(data.buffer));
     }
+
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //Prevents s-coordinate wrapping (repeating).
@@ -755,53 +870,53 @@ xModelHandle.prototype._bufferTexture = function (pointer, data, arity) {
 
 xModelHandle.prototype.getState = function (id) {
     if (typeof (id) === "undefined") throw "id must be defined";
-    var map = this.getProductMap(id);
+
+    const map = this.getProductMap(id);
     if (map === null) return null;
 
-    var span = map.spans[0];
-    if (typeof (span) == "undefined") return null;
+    const span = map.spans[0];
+    if (typeof (span) === "undefined") return null;
 
     return this._model.states[span[0] * 2];
-}
+};
 
 xModelHandle.prototype.getStyle = function (id) {
     if (typeof (id) === "undefined") throw "id must be defined";
-    var map = this.getProductMap(id);
+    const map = this.getProductMap(id);
     if (map === null) return null;
 
-    var span = map.spans[0];
-    if (typeof (span) == "undefined") return null;
+    const span = map.spans[0];
+    if (typeof (span) === "undefined") return null;
 
     return this._model.states[span[0] * 2 + 1];
-}
+};
 
 xModelHandle.prototype.setState = function (state, args) {
-    if (typeof (state) != 'number' && state < 0 && state > 255) throw 'You have to specify state as an ID of state or index in style pallete.';
-    if (typeof (args) == 'undefined') throw 'You have to specify products as an array of product IDs or as a product type ID';
+    if (typeof (state) !== 'number' && state < 0 && state > 255) throw 'You have to specify state as an ID of state or index in style pallete.';
+    if (typeof (args) === 'undefined') throw 'You have to specify products as an array of product IDs or as a product type ID';
 
-    var maps = [];
+    const maps = [];
+
     //it is type
-    if (typeof (args) == 'number') {
-        for (var n in this._model.productMap) {
-            var map = this._model.productMap[n];
-            if (map.type == args) maps.push(map);
+    if (typeof (args) === 'number') {
+        for (let n in this._model.productMap) {
+            const map = this._model.productMap[n];
+            if (map.type === args) maps.push(map);
         }
-    }
-        //it is a list of IDs
-    else {
-        for (var l = 0; l < args.length; l++) {
-            var id = args[l];
-            var map = this.getProductMap(id);
-            if (map != null) maps.push(map);
+    } else { //it is a list of IDs
+        for (let l = 0; l < args.length; l++) {
+            const id = args[l];
+            const map = this.getProductMap(id);
+            if (map !== null) maps.push(map);
         }
     }
 
     //shift +1 if it is an overlay colour style or 0 if it is a state.
-    var shift = state <= 225 ? 1 : 0;
+    const shift = state <= 225 ? 1 : 0;
     maps.forEach(function (map) {
         map.spans.forEach(function (span) {
             //set state or style
-            for (var k = span[0]; k < span[1]; k++) {
+            for (let k = span[0]; k < span[1]; k++) {
                 this._model.states[k * 2 + shift] = state;
             }
         }, this);
@@ -812,7 +927,7 @@ xModelHandle.prototype.setState = function (state, args) {
 };
 
 xModelHandle.prototype.resetStates = function () {
-    for (var i = 0; i < this._model.states.length; i += 2) {
+    for (let i = 0; i < this._model.states.length; i += 2) {
         this._model.states[i] = xState.UNDEFINED;
     }
     //buffer data to GPU
@@ -820,7 +935,7 @@ xModelHandle.prototype.resetStates = function () {
 };
 
 xModelHandle.prototype.resetStyles = function () {
-    for (var i = 0; i < this._model.states.length; i += 2) {
+    for (let i = 0; i < this._model.states.length; i += 2) {
         this._model.states[i + 1] = xState.UNSTYLED;
     }
     //buffer data to GPU
@@ -828,54 +943,55 @@ xModelHandle.prototype.resetStyles = function () {
 };
 
 xModelHandle.prototype.getModelState = function() {
-    var result = [];
-    var products = this._model.productMap; 
-    for (var i in products) {
+    const result = [];
+    const products = this._model.productMap;
+
+    for (let i in products) {
         if (!products.hasOwnProperty(i)) {
             continue;
         }
-        var map = products[i];
-        var span = map.spans[0];
-        if (typeof (span) == "undefined") continue;
 
-        var state = this._model.states[span[0] * 2];
-        var style = this._model.states[span[0] * 2 + 1];
+        const map = products[i];
+        const span = map.spans[0];
+
+        if (typeof (span) === "undefined") continue;
+
+        const state = this._model.states[span[0] * 2];
+        const style = this._model.states[span[0] * 2 + 1];
 
         result.push([map.productID, state + (style << 8)]);
     }
-    return result;  
+    return result;
 };
 
 xModelHandle.prototype.restoreModelState = function (state) {
     state.forEach(function (s) {
-        var id = s[0];
-        var style = s[1] >> 8;
-        var state = s[1] - (style << 8);
+        const id = s[0];
+        const style = s[1] >> 8;
+        const state = s[1] - (style << 8);
+        const map = this.getProductMap(id);
 
-        var map = this.getProductMap(id);
         if (map != null) {
             map.spans.forEach(function (span) {
                 //set state or style
-                for (var k = span[0]; k < span[1]; k++) {
+                for (let k = span[0]; k < span[1]; k++) {
                     this._model.states[k * 2] = state;
                     this._model.states[k * 2 + 1] = style;
                 }
             }, this);
         }
-
     }, this);
 
     //buffer data to GPU
     this._bufferData(this.stateBuffer, this._model.states);
-};
-var xProductInheritance = { name: "IfcProduct", id: 20, abs: true, children: [{ name: "IfcElement", id: 19, abs: true, children: [{ name: "IfcDistributionElement", id: 44, abs: false, children: [{ name: "IfcDistributionFlowElement", id: 45, abs: false, children: [{ name: "IfcDistributionChamberElement", id: 180, abs: false }, { name: "IfcEnergyConversionDevice", id: 175, abs: false, children: [{ name: "IfcAirToAirHeatRecovery", id: 1097, abs: false }, { name: "IfcBoiler", id: 1105, abs: false }, { name: "IfcBurner", id: 1109, abs: false }, { name: "IfcChiller", id: 1119, abs: false }, { name: "IfcCoil", id: 1124, abs: false }, { name: "IfcCondenser", id: 1132, abs: false }, { name: "IfcCooledBeam", id: 1141, abs: false }, { name: "IfcCoolingTower", id: 1142, abs: false }, { name: "IfcEngine", id: 1164, abs: false }, { name: "IfcEvaporativeCooler", id: 1166, abs: false }, { name: "IfcEvaporator", id: 1167, abs: false }, { name: "IfcHeatExchanger", id: 1187, abs: false }, { name: "IfcHumidifier", id: 1188, abs: false }, { name: "IfcTubeBundle", id: 1305, abs: false }, { name: "IfcUnitaryEquipment", id: 1310, abs: false }, { name: "IfcElectricGenerator", id: 1160, abs: false }, { name: "IfcElectricMotor", id: 1161, abs: false }, { name: "IfcMotorConnection", id: 1216, abs: false }, { name: "IfcSolarDevice", id: 1270, abs: false }, { name: "IfcTransformer", id: 1303, abs: false }] }, { name: "IfcFlowController", id: 121, abs: false, children: [{ name: "IfcElectricDistributionPoint", id: 242, abs: false }, { name: "IfcAirTerminalBox", id: 1096, abs: false }, { name: "IfcDamper", id: 1148, abs: false }, { name: "IfcFlowMeter", id: 1182, abs: false }, { name: "IfcValve", id: 1311, abs: false }, { name: "IfcElectricDistributionBoard", id: 1157, abs: false }, { name: "IfcElectricTimeControl", id: 1162, abs: false }, { name: "IfcProtectiveDevice", id: 1235, abs: false }, { name: "IfcSwitchingDevice", id: 1290, abs: false }] }, { name: "IfcFlowFitting", id: 467, abs: false, children: [{ name: "IfcDuctFitting", id: 1153, abs: false }, { name: "IfcPipeFitting", id: 1222, abs: false }, { name: "IfcCableCarrierFitting", id: 1111, abs: false }, { name: "IfcCableFitting", id: 1113, abs: false }, { name: "IfcJunctionBox", id: 1195, abs: false }] }, { name: "IfcFlowMovingDevice", id: 502, abs: false, children: [{ name: "IfcCompressor", id: 1131, abs: false }, { name: "IfcFan", id: 1177, abs: false }, { name: "IfcPump", id: 1238, abs: false }] }, { name: "IfcFlowSegment", id: 574, abs: false, children: [{ name: "IfcDuctSegment", id: 1154, abs: false }, { name: "IfcPipeSegment", id: 1223, abs: false }, { name: "IfcCableCarrierSegment", id: 1112, abs: false }, { name: "IfcCableSegment", id: 1115, abs: false }] }, { name: "IfcFlowStorageDevice", id: 371, abs: false, children: [{ name: "IfcTank", id: 1293, abs: false }, { name: "IfcElectricFlowStorageDevice", id: 1159, abs: false }] }, { name: "IfcFlowTerminal", id: 46, abs: false, children: [{ name: "IfcFireSuppressionTerminal", id: 1179, abs: false }, { name: "IfcSanitaryTerminal", id: 1262, abs: false }, { name: "IfcStackTerminal", id: 1277, abs: false }, { name: "IfcWasteTerminal", id: 1315, abs: false }, { name: "IfcAirTerminal", id: 1095, abs: false }, { name: "IfcMedicalDevice", id: 1212, abs: false }, { name: "IfcSpaceHeater", id: 1272, abs: false }, { name: "IfcAudioVisualAppliance", id: 1099, abs: false }, { name: "IfcCommunicationsAppliance", id: 1127, abs: false }, { name: "IfcElectricAppliance", id: 1156, abs: false }, { name: "IfcLamp", id: 1198, abs: false }, { name: "IfcLightFixture", id: 1199, abs: false }, { name: "IfcOutlet", id: 1219, abs: false }] }, { name: "IfcFlowTreatmentDevice", id: 425, abs: false, children: [{ name: "IfcInterceptor", id: 1193, abs: false }, { name: "IfcDuctSilencer", id: 1155, abs: false }, { name: "IfcFilter", id: 1178, abs: false }] }] }, { name: "IfcDistributionControlElement", id: 468, abs: false, children: [{ name: "IfcProtectiveDeviceTrippingUnit", id: 1236, abs: false }, { name: "IfcActuator", id: 1091, abs: false }, { name: "IfcAlarm", id: 1098, abs: false }, { name: "IfcController", id: 1139, abs: false }, { name: "IfcFlowInstrument", id: 1181, abs: false }, { name: "IfcSensor", id: 1264, abs: false }, { name: "IfcUnitaryControlElement", id: 1308, abs: false }] }] }, { name: "IfcElementComponent", id: 424, abs: true, children: [{ name: "IfcDiscreteAccessory", id: 423, abs: false }, { name: "IfcFastener", id: 535, abs: false, children: [{ name: "IfcMechanicalFastener", id: 536, abs: false }] }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }, { name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcMechanicalFastener", id: 536, abs: false }, { name: "IfcVibrationIsolator", id: 1312, abs: false }] }, { name: "IfcFeatureElement", id: 386, abs: true, children: [{ name: "IfcFeatureElementSubtraction", id: 499, abs: true, children: [{ name: "IfcEdgeFeature", id: 764, abs: true, children: [{ name: "IfcChamferEdgeFeature", id: 765, abs: false }, { name: "IfcRoundedEdgeFeature", id: 766, abs: false }] }, { name: "IfcOpeningElement", id: 498, abs: false, children: [{ name: "IfcOpeningStandardCase", id: 1217, abs: false }] }, { name: "IfcVoidingFeature", id: 1313, abs: false }] }, { name: "IfcFeatureElementAddition", id: 385, abs: true, children: [{ name: "IfcProjectionElement", id: 384, abs: false }] }, { name: "IfcSurfaceFeature", id: 1287, abs: false }] }, { name: "IfcBuildingElement", id: 26, abs: true, children: [{ name: "IfcBuildingElementComponent", id: 221, abs: true, children: [{ name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }] }, { name: "IfcFooting", id: 120, abs: false }, { name: "IfcPile", id: 572, abs: false }, { name: "IfcBeam", id: 171, abs: false, children: [{ name: "IfcBeamStandardCase", id: 1104, abs: false }] }, { name: "IfcColumn", id: 383, abs: false, children: [{ name: "IfcColumnStandardCase", id: 1126, abs: false }] }, { name: "IfcCurtainWall", id: 456, abs: false }, { name: "IfcDoor", id: 213, abs: false, children: [{ name: "IfcDoorStandardCase", id: 1151, abs: false }] }, { name: "IfcMember", id: 310, abs: false, children: [{ name: "IfcMemberStandardCase", id: 1214, abs: false }] }, { name: "IfcPlate", id: 351, abs: false, children: [{ name: "IfcPlateStandardCase", id: 1224, abs: false }] }, { name: "IfcRailing", id: 350, abs: false }, { name: "IfcRamp", id: 414, abs: false }, { name: "IfcRampFlight", id: 348, abs: false }, { name: "IfcRoof", id: 347, abs: false }, { name: "IfcSlab", id: 99, abs: false, children: [{ name: "IfcSlabElementedCase", id: 1268, abs: false }, { name: "IfcSlabStandardCase", id: 1269, abs: false }] }, { name: "IfcStair", id: 346, abs: false }, { name: "IfcStairFlight", id: 25, abs: false }, { name: "IfcWall", id: 452, abs: false, children: [{ name: "IfcWallStandardCase", id: 453, abs: false }, { name: "IfcWallElementedCase", id: 1314, abs: false }] }, { name: "IfcWindow", id: 667, abs: false, children: [{ name: "IfcWindowStandardCase", id: 1316, abs: false }] }, { name: "IfcBuildingElementProxy", id: 560, abs: false }, { name: "IfcCovering", id: 382, abs: false }, { name: "IfcChimney", id: 1120, abs: false }, { name: "IfcShadingDevice", id: 1265, abs: false }] }, { name: "IfcElementAssembly", id: 18, abs: false }, { name: "IfcFurnishingElement", id: 253, abs: false, children: [{ name: "IfcFurniture", id: 1184, abs: false }, { name: "IfcSystemFurnitureElement", id: 1291, abs: false }] }, { name: "IfcTransportElement", id: 416, abs: false }, { name: "IfcVirtualElement", id: 168, abs: false }, { name: "IfcElectricalElement", id: 23, abs: false }, { name: "IfcEquipmentElement", id: 212, abs: false }, { name: "IfcCivilElement", id: 1122, abs: false }, { name: "IfcGeographicElement", id: 1185, abs: false }] }, { name: "IfcPort", id: 179, abs: true, children: [{ name: "IfcDistributionPort", id: 178, abs: false }] }, { name: "IfcProxy", id: 447, abs: false }, { name: "IfcStructuralActivity", id: 41, abs: true, children: [{ name: "IfcStructuralAction", id: 40, abs: true, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false, children: [{ name: "IfcStructuralLinearActionVarying", id: 464, abs: false }] }, { name: "IfcStructuralPlanarAction", id: 39, abs: false, children: [{ name: "IfcStructuralPlanarActionVarying", id: 357, abs: false }] }, { name: "IfcStructuralPointAction", id: 356, abs: false }, { name: "IfcStructuralCurveAction", id: 1279, abs: false, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false }] }, { name: "IfcStructuralSurfaceAction", id: 1284, abs: false, children: [{ name: "IfcStructuralPlanarAction", id: 39, abs: false }] }] }, { name: "IfcStructuralReaction", id: 355, abs: true, children: [{ name: "IfcStructuralPointReaction", id: 354, abs: false }, { name: "IfcStructuralCurveReaction", id: 1280, abs: false }, { name: "IfcStructuralSurfaceReaction", id: 1285, abs: false }] }] }, { name: "IfcStructuralItem", id: 226, abs: true, children: [{ name: "IfcStructuralConnection", id: 265, abs: true, children: [{ name: "IfcStructuralCurveConnection", id: 534, abs: false }, { name: "IfcStructuralPointConnection", id: 533, abs: false }, { name: "IfcStructuralSurfaceConnection", id: 264, abs: false }] }, { name: "IfcStructuralMember", id: 225, abs: true, children: [{ name: "IfcStructuralCurveMember", id: 224, abs: false, children: [{ name: "IfcStructuralCurveMemberVarying", id: 227, abs: false }] }, { name: "IfcStructuralSurfaceMember", id: 420, abs: false, children: [{ name: "IfcStructuralSurfaceMemberVarying", id: 421, abs: false }] }] }] }, { name: "IfcAnnotation", id: 634, abs: false }, { name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcGrid", id: 564, abs: false }, { name: "IfcSpatialElement", id: 1273, abs: true, children: [{ name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcExternalSpatialStructureElement", id: 1175, abs: true, children: [{ name: "IfcExternalSpatialElement", id: 1174, abs: false }] }, { name: "IfcSpatialZone", id: 1275, abs: false }] }] };
+};const xProductInheritance = { name: "IfcProduct", id: 20, abs: true, children: [{ name: "IfcElement", id: 19, abs: true, children: [{ name: "IfcDistributionElement", id: 44, abs: false, children: [{ name: "IfcDistributionFlowElement", id: 45, abs: false, children: [{ name: "IfcDistributionChamberElement", id: 180, abs: false }, { name: "IfcEnergyConversionDevice", id: 175, abs: false, children: [{ name: "IfcAirToAirHeatRecovery", id: 1097, abs: false }, { name: "IfcBoiler", id: 1105, abs: false }, { name: "IfcBurner", id: 1109, abs: false }, { name: "IfcChiller", id: 1119, abs: false }, { name: "IfcCoil", id: 1124, abs: false }, { name: "IfcCondenser", id: 1132, abs: false }, { name: "IfcCooledBeam", id: 1141, abs: false }, { name: "IfcCoolingTower", id: 1142, abs: false }, { name: "IfcEngine", id: 1164, abs: false }, { name: "IfcEvaporativeCooler", id: 1166, abs: false }, { name: "IfcEvaporator", id: 1167, abs: false }, { name: "IfcHeatExchanger", id: 1187, abs: false }, { name: "IfcHumidifier", id: 1188, abs: false }, { name: "IfcTubeBundle", id: 1305, abs: false }, { name: "IfcUnitaryEquipment", id: 1310, abs: false }, { name: "IfcElectricGenerator", id: 1160, abs: false }, { name: "IfcElectricMotor", id: 1161, abs: false }, { name: "IfcMotorConnection", id: 1216, abs: false }, { name: "IfcSolarDevice", id: 1270, abs: false }, { name: "IfcTransformer", id: 1303, abs: false }] }, { name: "IfcFlowController", id: 121, abs: false, children: [{ name: "IfcElectricDistributionPoint", id: 242, abs: false }, { name: "IfcAirTerminalBox", id: 1096, abs: false }, { name: "IfcDamper", id: 1148, abs: false }, { name: "IfcFlowMeter", id: 1182, abs: false }, { name: "IfcValve", id: 1311, abs: false }, { name: "IfcElectricDistributionBoard", id: 1157, abs: false }, { name: "IfcElectricTimeControl", id: 1162, abs: false }, { name: "IfcProtectiveDevice", id: 1235, abs: false }, { name: "IfcSwitchingDevice", id: 1290, abs: false }] }, { name: "IfcFlowFitting", id: 467, abs: false, children: [{ name: "IfcDuctFitting", id: 1153, abs: false }, { name: "IfcPipeFitting", id: 1222, abs: false }, { name: "IfcCableCarrierFitting", id: 1111, abs: false }, { name: "IfcCableFitting", id: 1113, abs: false }, { name: "IfcJunctionBox", id: 1195, abs: false }] }, { name: "IfcFlowMovingDevice", id: 502, abs: false, children: [{ name: "IfcCompressor", id: 1131, abs: false }, { name: "IfcFan", id: 1177, abs: false }, { name: "IfcPump", id: 1238, abs: false }] }, { name: "IfcFlowSegment", id: 574, abs: false, children: [{ name: "IfcDuctSegment", id: 1154, abs: false }, { name: "IfcPipeSegment", id: 1223, abs: false }, { name: "IfcCableCarrierSegment", id: 1112, abs: false }, { name: "IfcCableSegment", id: 1115, abs: false }] }, { name: "IfcFlowStorageDevice", id: 371, abs: false, children: [{ name: "IfcTank", id: 1293, abs: false }, { name: "IfcElectricFlowStorageDevice", id: 1159, abs: false }] }, { name: "IfcFlowTerminal", id: 46, abs: false, children: [{ name: "IfcFireSuppressionTerminal", id: 1179, abs: false }, { name: "IfcSanitaryTerminal", id: 1262, abs: false }, { name: "IfcStackTerminal", id: 1277, abs: false }, { name: "IfcWasteTerminal", id: 1315, abs: false }, { name: "IfcAirTerminal", id: 1095, abs: false }, { name: "IfcMedicalDevice", id: 1212, abs: false }, { name: "IfcSpaceHeater", id: 1272, abs: false }, { name: "IfcAudioVisualAppliance", id: 1099, abs: false }, { name: "IfcCommunicationsAppliance", id: 1127, abs: false }, { name: "IfcElectricAppliance", id: 1156, abs: false }, { name: "IfcLamp", id: 1198, abs: false }, { name: "IfcLightFixture", id: 1199, abs: false }, { name: "IfcOutlet", id: 1219, abs: false }] }, { name: "IfcFlowTreatmentDevice", id: 425, abs: false, children: [{ name: "IfcInterceptor", id: 1193, abs: false }, { name: "IfcDuctSilencer", id: 1155, abs: false }, { name: "IfcFilter", id: 1178, abs: false }] }] }, { name: "IfcDistributionControlElement", id: 468, abs: false, children: [{ name: "IfcProtectiveDeviceTrippingUnit", id: 1236, abs: false }, { name: "IfcActuator", id: 1091, abs: false }, { name: "IfcAlarm", id: 1098, abs: false }, { name: "IfcController", id: 1139, abs: false }, { name: "IfcFlowInstrument", id: 1181, abs: false }, { name: "IfcSensor", id: 1264, abs: false }, { name: "IfcUnitaryControlElement", id: 1308, abs: false }] }] }, { name: "IfcElementComponent", id: 424, abs: true, children: [{ name: "IfcDiscreteAccessory", id: 423, abs: false }, { name: "IfcFastener", id: 535, abs: false, children: [{ name: "IfcMechanicalFastener", id: 536, abs: false }] }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }, { name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcMechanicalFastener", id: 536, abs: false }, { name: "IfcVibrationIsolator", id: 1312, abs: false }] }, { name: "IfcFeatureElement", id: 386, abs: true, children: [{ name: "IfcFeatureElementSubtraction", id: 499, abs: true, children: [{ name: "IfcEdgeFeature", id: 764, abs: true, children: [{ name: "IfcChamferEdgeFeature", id: 765, abs: false }, { name: "IfcRoundedEdgeFeature", id: 766, abs: false }] }, { name: "IfcOpeningElement", id: 498, abs: false, children: [{ name: "IfcOpeningStandardCase", id: 1217, abs: false }] }, { name: "IfcVoidingFeature", id: 1313, abs: false }] }, { name: "IfcFeatureElementAddition", id: 385, abs: true, children: [{ name: "IfcProjectionElement", id: 384, abs: false }] }, { name: "IfcSurfaceFeature", id: 1287, abs: false }] }, { name: "IfcBuildingElement", id: 26, abs: true, children: [{ name: "IfcBuildingElementComponent", id: 221, abs: true, children: [{ name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }] }, { name: "IfcFooting", id: 120, abs: false }, { name: "IfcPile", id: 572, abs: false }, { name: "IfcBeam", id: 171, abs: false, children: [{ name: "IfcBeamStandardCase", id: 1104, abs: false }] }, { name: "IfcColumn", id: 383, abs: false, children: [{ name: "IfcColumnStandardCase", id: 1126, abs: false }] }, { name: "IfcCurtainWall", id: 456, abs: false }, { name: "IfcDoor", id: 213, abs: false, children: [{ name: "IfcDoorStandardCase", id: 1151, abs: false }] }, { name: "IfcMember", id: 310, abs: false, children: [{ name: "IfcMemberStandardCase", id: 1214, abs: false }] }, { name: "IfcPlate", id: 351, abs: false, children: [{ name: "IfcPlateStandardCase", id: 1224, abs: false }] }, { name: "IfcRailing", id: 350, abs: false }, { name: "IfcRamp", id: 414, abs: false }, { name: "IfcRampFlight", id: 348, abs: false }, { name: "IfcRoof", id: 347, abs: false }, { name: "IfcSlab", id: 99, abs: false, children: [{ name: "IfcSlabElementedCase", id: 1268, abs: false }, { name: "IfcSlabStandardCase", id: 1269, abs: false }] }, { name: "IfcStair", id: 346, abs: false }, { name: "IfcStairFlight", id: 25, abs: false }, { name: "IfcWall", id: 452, abs: false, children: [{ name: "IfcWallStandardCase", id: 453, abs: false }, { name: "IfcWallElementedCase", id: 1314, abs: false }] }, { name: "IfcWindow", id: 667, abs: false, children: [{ name: "IfcWindowStandardCase", id: 1316, abs: false }] }, { name: "IfcBuildingElementProxy", id: 560, abs: false }, { name: "IfcCovering", id: 382, abs: false }, { name: "IfcChimney", id: 1120, abs: false }, { name: "IfcShadingDevice", id: 1265, abs: false }] }, { name: "IfcElementAssembly", id: 18, abs: false }, { name: "IfcFurnishingElement", id: 253, abs: false, children: [{ name: "IfcFurniture", id: 1184, abs: false }, { name: "IfcSystemFurnitureElement", id: 1291, abs: false }] }, { name: "IfcTransportElement", id: 416, abs: false }, { name: "IfcVirtualElement", id: 168, abs: false }, { name: "IfcElectricalElement", id: 23, abs: false }, { name: "IfcEquipmentElement", id: 212, abs: false }, { name: "IfcCivilElement", id: 1122, abs: false }, { name: "IfcGeographicElement", id: 1185, abs: false }] }, { name: "IfcPort", id: 179, abs: true, children: [{ name: "IfcDistributionPort", id: 178, abs: false }] }, { name: "IfcProxy", id: 447, abs: false }, { name: "IfcStructuralActivity", id: 41, abs: true, children: [{ name: "IfcStructuralAction", id: 40, abs: true, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false, children: [{ name: "IfcStructuralLinearActionVarying", id: 464, abs: false }] }, { name: "IfcStructuralPlanarAction", id: 39, abs: false, children: [{ name: "IfcStructuralPlanarActionVarying", id: 357, abs: false }] }, { name: "IfcStructuralPointAction", id: 356, abs: false }, { name: "IfcStructuralCurveAction", id: 1279, abs: false, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false }] }, { name: "IfcStructuralSurfaceAction", id: 1284, abs: false, children: [{ name: "IfcStructuralPlanarAction", id: 39, abs: false }] }] }, { name: "IfcStructuralReaction", id: 355, abs: true, children: [{ name: "IfcStructuralPointReaction", id: 354, abs: false }, { name: "IfcStructuralCurveReaction", id: 1280, abs: false }, { name: "IfcStructuralSurfaceReaction", id: 1285, abs: false }] }] }, { name: "IfcStructuralItem", id: 226, abs: true, children: [{ name: "IfcStructuralConnection", id: 265, abs: true, children: [{ name: "IfcStructuralCurveConnection", id: 534, abs: false }, { name: "IfcStructuralPointConnection", id: 533, abs: false }, { name: "IfcStructuralSurfaceConnection", id: 264, abs: false }] }, { name: "IfcStructuralMember", id: 225, abs: true, children: [{ name: "IfcStructuralCurveMember", id: 224, abs: false, children: [{ name: "IfcStructuralCurveMemberVarying", id: 227, abs: false }] }, { name: "IfcStructuralSurfaceMember", id: 420, abs: false, children: [{ name: "IfcStructuralSurfaceMemberVarying", id: 421, abs: false }] }] }] }, { name: "IfcAnnotation", id: 634, abs: false }, { name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcGrid", id: 564, abs: false }, { name: "IfcSpatialElement", id: 1273, abs: true, children: [{ name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcExternalSpatialStructureElement", id: 1175, abs: true, children: [{ name: "IfcExternalSpatialElement", id: 1174, abs: false }] }, { name: "IfcSpatialZone", id: 1275, abs: false }] }] };
+// noinspection JSDuplicatedDeclaration
 /**
 * Enumeration of product types.
 * @readonly
 * @enum {number}
 */
-var xProductType = {
-
+const xProductType = {
     IFCDISTRIBUTIONELEMENT: 44,
     IFCDISTRIBUTIONFLOWELEMENT: 45,
     IFCDISTRIBUTIONCHAMBERELEMENT: 180,
@@ -1059,34 +1175,36 @@ if (!window.xShaders) window.xShaders = {}
 xShaders.fragment_shader = " precision mediump float; uniform vec4 uClippingPlane; varying vec4 vFrontColor; varying vec4 vBackColor; varying vec3 vPosition; varying float vDiscard; void main(void) { if ( vDiscard > 0.001) discard; if (length(uClippingPlane) > 0.001) { vec4 p = uClippingPlane; vec3 x = vPosition; float distance = (dot(p.xyz, x) + p.w) / length(p.xyz); if (distance < 0.0){ discard; } } gl_FragColor = gl_FrontFacing ? vFrontColor : vBackColor; }";
 xShaders.vertex_shader = " attribute highp float aVertexIndex; attribute highp float aTransformationIndex; attribute highp float aStyleIndex; attribute highp float aProduct; attribute highp vec2 aState; attribute highp vec2 aNormal; uniform mat4 uMVMatrix; uniform mat4 uPMatrix; uniform vec4 ulightA; uniform vec4 ulightB; uniform vec4 uHighlightColour; uniform float uMeter; uniform bool uColorCoding; uniform int uRenderingMode; uniform highp sampler2D uVertexSampler; uniform int uVertexTextureSize; uniform highp sampler2D uMatrixSampler; uniform int uMatrixTextureSize; uniform highp sampler2D uStyleSampler; uniform int uStyleTextureSize; uniform highp sampler2D uStateStyleSampler; varying vec4 vFrontColor; varying vec4 vBackColor; varying vec3 vPosition; varying float vDiscard; vec3 getNormal(){ float U = aNormal[0]; float V = aNormal[1]; float PI = 3.1415926535897932384626433832795; float lon = U / 252.0 * 2.0 * PI; float lat = V / 252.0 * PI; float x = sin(lon) * sin(lat); float z = cos(lon) * sin(lat); float y = cos(lat); return normalize(vec3(x, y, z)); } vec4 getIdColor(){ float product = floor(aProduct + 0.5); float B = floor (product/(256.0*256.0)); float G = floor((product  - B * 256.0*256.0)/256.0); float R = mod(product, 256.0); return vec4(R/255.0, G/255.0, B/255.0, 1.0); } vec2 getTextureCoordinates(int index, int size) { float x = float(index - (index / size) * size); float y = float(index / size); float pixelSize = 1.0 / float(size); return vec2((x + 0.5) * pixelSize, (y + 0.5) * pixelSize); } vec4 getColor(){ int restyle = int(floor(aState[1] + 0.5)); if (restyle > 224){ int index = int (floor(aStyleIndex + 0.5)); vec2 coords = getTextureCoordinates(index, uStyleTextureSize); return texture2D(uStyleSampler, coords); } vec2 coords = getTextureCoordinates(restyle, 15); return texture2D(uStateStyleSampler, coords); } vec3 getVertexPosition(){ int index = int (floor(aVertexIndex +0.5)); vec2 coords = getTextureCoordinates(index, uVertexTextureSize); vec3 point = vec3(texture2D(uVertexSampler, coords)); int tIndex = int(floor(aTransformationIndex + 0.5)); if (tIndex != 65535) { tIndex *=4; mat4 transform = mat4( texture2D(uMatrixSampler, getTextureCoordinates(tIndex, uMatrixTextureSize)), texture2D(uMatrixSampler, getTextureCoordinates(tIndex+1, uMatrixTextureSize)), texture2D(uMatrixSampler, getTextureCoordinates(tIndex+2, uMatrixTextureSize)), texture2D(uMatrixSampler, getTextureCoordinates(tIndex+3, uMatrixTextureSize)) ); return vec3(transform * vec4(point, 1.0)); } return point; } void main(void) { int state = int(floor(aState[0] + 0.5)); vDiscard = 0.0; if (state == 254) { vDiscard = 1.0; vFrontColor = vec4(0.0, 0.0, 0.0, 0.0); vBackColor = vec4(0.0, 0.0, 0.0, 0.0); vPosition = vec3(0.0, 0.0, 0.0); gl_Position = vec4(0.0, 0.0, 0.0, 1.0); return; } vec3 vertex = getVertexPosition(); vec3 normal = getNormal(); vec3 backNormal = normal * -1.0; if (uColorCoding){ vec4 idColor = getIdColor(); vFrontColor = idColor; vBackColor = idColor; } else{ float lightAIntensity = ulightA[3]; vec3 lightADirection = normalize(ulightA.xyz - vertex); float lightBIntensity = ulightB[3]; vec3 lightBDirection = normalize(ulightB.xyz - vertex); float lightWeightA = max(dot(normal, lightADirection ) * lightAIntensity, 0.0); float lightWeightB = max(dot(normal, lightBDirection ) * lightBIntensity, 0.0); float backLightWeightA = max(dot(backNormal, lightADirection) * lightAIntensity, 0.0); float backLightWeightB = max(dot(backNormal, lightBDirection) * lightBIntensity, 0.0); float lightWeighting = lightWeightA + lightWeightB + 0.4; float backLightWeighting = backLightWeightA + backLightWeightB + 0.4; vec4 baseColor = vec4(1.0, 1.0, 1.0, 1.0); if (uRenderingMode == 2){ if (state == 252){ baseColor = getColor(); } else{ baseColor = vec4(0.0, 0.0, 0.3, 0.5); } } if (state == 253) { baseColor = uHighlightColour; } if (uRenderingMode != 2 && state != 253){ baseColor = getColor(); } if (baseColor.a < 0.98 && uRenderingMode == 0) { vec3 trans = -0.002 * uMeter * normalize(normal); vertex = vertex + trans; } vFrontColor = vec4(baseColor.rgb * lightWeighting, baseColor.a); vBackColor = vec4(baseColor.rgb * backLightWeighting, baseColor.a); } vPosition = vertex; gl_Position = uPMatrix * uMVMatrix * vec4(vertex, 1.0); }";
 xShaders.vertex_shader_noFPT = " attribute highp float aVertexIndex; attribute highp float aTransformationIndex; attribute highp float aStyleIndex; attribute highp float aProduct; attribute highp float aState; attribute highp vec2 aNormal; uniform mat4 uMVMatrix; uniform mat4 uPMatrix; uniform vec4 ulightA; uniform vec4 ulightB; uniform bool uColorCoding; uniform bool uFloatingPoint; uniform highp sampler2D uVertexSampler; uniform int uVertexTextureSize; uniform highp sampler2D uMatrixSampler; uniform int uMatrixTextureSize; uniform highp sampler2D uStyleSampler; uniform int uStyleTextureSize; uniform highp sampler2D uStateStyleSampler; int stateStyleTextureSize = 15; varying vec4 vColor; varying vec3 vPosition; vec3 getNormal(){ float U = aNormal[0]; float V = aNormal[1]; float PI = 3.1415926535897932384626433832795; float u = ((U / 252.0) * (2.0 * PI)) - PI; float v = ((V / 252.0) * (2.0 * PI)) - PI; float x = sin(v) * cos(u); float y = sin(v) * sin(u); float z = cos(v); return normalize(vec3(x, y, z)); } vec4 getIdColor(){ float R = mod(aProduct, 256.0) / 255.0; float G = floor(aProduct/256.0) / 255.0; float B = floor (aProduct/(256.0*256.0)) / 255.0; return vec4(R, G, B, 1.0); } vec2 getVertexTextureCoordinates(int index, int size) { float x = float(index - (index / size) * size); float y = float(index / size); float pixelSize = 1.0 / float(size); return vec2((x + 0.5) * pixelSize, (y + 0.5) * pixelSize); } int getByteFromScale(float base) { float result = base * 255.0; int correction = fract(result) >= 0.5 ? 1 : 0; return int(result) + correction; } ivec4 getPixel(int index, sampler2D sampler, int size) { vec2 coords = getVertexTextureCoordinates(index, size); vec4 pixel = texture2D(sampler, coords); return ivec4( getByteFromScale(pixel.r), getByteFromScale(pixel.g), getByteFromScale(pixel.b), getByteFromScale(pixel.a) ); } void getBits(ivec4 pixel, out int result[32]) { for (int i = 0; i < 4; i++) { int actualByte = pixel[i]; for (int j = 0; j < 8; j++) { result[31 - (j + i * 8)] =  actualByte - (actualByte / 2) * 2; actualByte /= 2; } } } float getFloatFromPixel(ivec4 pixel) { int bits[32]; getBits(pixel, bits); float sign =  bits[0] == 0 ? 1.0 : -1.0; highp float fraction = 1.0; highp float exponent = 0.0; for (int i = 1; i < 9; i++) { exponent += float(bits[9 - i]) * exp2(float (i - 1)); } exponent -= 127.0; for (int i = 9; i < 32; i++) { fraction += float(bits[i]) * exp2(float((-1)*(i-8))); } return sign * fraction * exp2(exponent); } float getFloatFromPixel(int index, sampler2D sampler, int size) { ivec4 pixel = getPixel(index, sampler, size); return getFloatFromPixel(pixel); } vec4 getColor(){ if (floor(aState + 0.5) == 0.0){ int index = int (floor(aStyleIndex + 0.5)); vec2 coords = getVertexTextureCoordinates(index, uStyleTextureSize); return texture2D(uStyleSampler, coords); } else{ return vec4(1.0,1.0,1.0,1.0); } } vec3 getVertexPosition(){ int index = int (floor(aVertexIndex +0.5))* 3; vec3 position = vec3( getFloatFromPixel(index, uVertexSampler, uVertexTextureSize), getFloatFromPixel(index + 1, uVertexSampler, uVertexTextureSize), getFloatFromPixel(index + 2, uVertexSampler, uVertexTextureSize) ); int tIndex = int(floor(aTransformationIndex + 0.5)); if (tIndex != 65535) { tIndex *= 16; mat4 transform = mat4( getFloatFromPixel(tIndex + 0, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 1, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 2, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 3, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 4, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 5, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 6, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 7, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 8, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 9, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 10, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 11, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 12, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 13, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 14, uMatrixSampler, uMatrixTextureSize), getFloatFromPixel(tIndex + 15, uMatrixSampler, uMatrixTextureSize) ); vec4 transformedPosition = transform * vec4(position, 1.0); return vec3(transformedPosition); } return position; } void main(void) { vec3 vertex = getVertexPosition(); vPosition = vertex; gl_Position = uPMatrix * uMVMatrix * vec4(vertex, 1.0); if (uColorCoding){ vColor = getIdColor(); } else{ vec3 normal = getNormal(); float lightAIntensity = ulightA[3]; vec3 lightADirection = normalize(ulightA.xyz - vPosition); float lightBIntensity = ulightB[3]; vec3 lightBDirection = normalize(ulightB.xyz - vPosition); float lightWeightA = max(dot(normal, lightADirection ) * lightAIntensity, 0.0); float lightWeightB = max(dot(normal, lightBDirection ) * lightBIntensity, 0.0); float lightWeighting = lightWeightA + lightWeightB + 0.4; vec4 baseColor = getColor(); vColor = vec4(baseColor.rgb * lightWeighting, baseColor.a); } }";
-
 /**
-    * Enumeration for object states.
-    * @readonly
-    * @enum {number}
-    */
-var xState = {
+* Enumeration for object states.
+* @readonly
+* @enum {number}
+*/
+const xState = {
     UNDEFINED: 255,
     HIDDEN: 254,
     HIGHLIGHTED: 253,
     XRAYVISIBLE: 252,
     UNSTYLED: 225
 };
-function xTriangulatedShape() { };
+function xTriangulatedShape() { }
 
 //this will get xBinaryReader on the current position and will parse it's content to fill itself with vertices, normals and vertex indices
 xTriangulatedShape.prototype.parse = function (binReader) {
-    var self = this;
-    var version = binReader.readByte();
-    var numVertices = binReader.readInt32();
-    var numOfTriangles = binReader.readInt32();
+    const self = this;
+    const version = binReader.readByte();
+    const numVertices = binReader.readInt32();
+    const numOfTriangles = binReader.readInt32();
     self.vertices = binReader.readFloat32(numVertices * 3);
+
     //allocate memory of defined size (to avoid reallocation of memory)
     self.indices = new Uint32Array(numOfTriangles * 3);
     self.normals = new Uint8Array(numOfTriangles * 6);
+
     //indices for incremental adding of indices and normals
-    var iIndex = 0;
-    var readIndex;
+    let iIndex = 0;
+    let readIndex;
+
     if (numVertices <= 0xFF) {
         readIndex = function (count) { return binReader.readByte(count); };
     }
@@ -1096,25 +1214,26 @@ xTriangulatedShape.prototype.parse = function (binReader) {
     else {
         readIndex = function (count) { return binReader.readInt32(count); };
     }
-    
-    var numFaces = binReader.readInt32();
 
-    if (numVertices === 0 || numOfTriangles === 0)
+    const numFaces = binReader.readInt32();
+
+    if (numVertices === 0 || numOfTriangles === 0) {
         return;
+    }
 
-    for (var i = 0; i < numFaces; i++) {
-        var numTrianglesInFace = binReader.readInt32();
-        if (numTrianglesInFace == 0) continue;
+    for (let i = 0; i < numFaces; i++) {
+        let numTrianglesInFace = binReader.readInt32();
+        if (numTrianglesInFace === 0) continue;
 
-        var isPlanar = numTrianglesInFace > 0;
+        const isPlanar = numTrianglesInFace > 0;
         numTrianglesInFace = Math.abs(numTrianglesInFace);
         if (isPlanar) {
-            var normal = binReader.readByte(2);
+            const normal = binReader.readByte(2);
             //read and set all indices
-            var planarIndices = readIndex(3 * numTrianglesInFace);
+            const planarIndices = readIndex(3 * numTrianglesInFace);
             self.indices.set(planarIndices, iIndex);
 
-            for (var j = 0; j < numTrianglesInFace*3; j++) {
+            for (let j = 0; j < numTrianglesInFace*3; j++) {
                 //add three identical normals because this is planar but needs to be expanded for WebGL
                 self.normals[iIndex * 2] = normal[0];
                 self.normals[iIndex * 2 + 1] = normal[1];
@@ -1122,7 +1241,7 @@ xTriangulatedShape.prototype.parse = function (binReader) {
             }
         }
         else {
-            for (var j = 0; j < numTrianglesInFace; j++) {
+            for (let j = 0; j < numTrianglesInFace; j++) {
                 self.indices[iIndex] = readIndex();//a
                 self.normals.set(binReader.readByte(2), iIndex * 2);
                 iIndex++;
@@ -1142,8 +1261,8 @@ xTriangulatedShape.prototype.parse = function (binReader) {
 //This would load only shape data from binary file
 xTriangulatedShape.prototype.load = function (source) {
     //binary reading
-    var br = new xBinaryReader();
-    var self = this;
+    const br = new xBinaryReader();
+    const self = this;
     br.onloaded = function () {
         self.parse(br);
         if (self.onloaded) {
@@ -1153,7 +1272,6 @@ xTriangulatedShape.prototype.load = function (source) {
     br.load(source);
 };
 
-
 xTriangulatedShape.prototype.vertices = [];
 xTriangulatedShape.prototype.indices = [];
 xTriangulatedShape.prototype.normals = [];
@@ -1161,9 +1279,8 @@ xTriangulatedShape.prototype.normals = [];
 //this function will get called when loading is finished.
 //This won't get called after parse which is supposed to happen in large operation.
 xTriangulatedShape.prototype.onloaded = function () { };
-
 /**
-* This is constructor of the xBIM Viewer. It gets HTMLCanvasElement or string ID as an argument. Viewer will than be initialized 
+* This is constructor of the xBIM Viewer. It gets HTMLCanvasElement or string ID as an argument. Viewer will than be initialized
 * in the context of specified canvas. Any other argument will throw exception.
 * @name xViewer
 * @constructor
@@ -1175,14 +1292,14 @@ xTriangulatedShape.prototype.onloaded = function () { };
 * @param {string | HTMLCanvasElement} canvas - string ID of the canvas or HTML canvas element.
 */
 function xViewer(canvas) {
-    if (typeof (canvas) == 'undefined') {
+    if (typeof (canvas) === 'undefined') {
         throw 'Canvas has to be defined';
     }
     this._canvas = null;
-    if (typeof(canvas.nodeName) != 'undefined' && canvas.nodeName == 'CANVAS') { 
+    if (typeof(canvas.nodeName) !== 'undefined' && canvas.nodeName === 'CANVAS') {
         this._canvas = canvas;
     }
-    if (typeof (canvas) == 'string') {
+    if (typeof (canvas) === 'string') {
         this._canvas = document.getElementById(canvas);
     }
     if (this._canvas == null) {
@@ -1195,10 +1312,10 @@ function xViewer(canvas) {
     */
     /**
     * This is only a structure. Don't call the constructor.
-    * @classdesc This is a structure that holds settings of perspective camera. If you want 
+    * @classdesc This is a structure that holds settings of perspective camera. If you want
     * to switch viewer to use perspective camera set {@link xViewer#camera camera} to 'perspective'.
-    * You can modify this but it is not necessary because sensible values are 
-    * defined when geometry model is loaded with {@link xViewer#load load()} method. If you want to 
+    * You can modify this but it is not necessary because sensible values are
+    * defined when geometry model is loaded with {@link xViewer#load load()} method. If you want to
     * change these values you have to do it after geometry is loaded.
     * @class
     * @name PerspectiveCamera
@@ -1213,7 +1330,7 @@ function xViewer(canvas) {
     };
 
     /**
-    * This is a structure that holds settings of orthogonal camera. You can modify this but it is not necessary because sensible values are 
+    * This is a structure that holds settings of orthogonal camera. You can modify this but it is not necessary because sensible values are
     * defined when geometry model is loaded with {@link xViewer#load load()} method. If you want to change these values you have to do it after geometry is loaded.
     * @member {OrthogonalCamera} xViewer#orthogonalCamera
     */
@@ -1249,16 +1366,21 @@ function xViewer(canvas) {
     * @member {Number[]} xViewer#background
     */
     this.background = [230, 230, 230, 255];
+
     /**
     * Array of four integers between 0 and 255 representing RGBA colour components. This defines colour for highlighted elements. You can change this value at any time with instant effect.
     * @member {Number[]} xViewer#highlightingColour
     */
     this.highlightingColour = [255, 173, 33, 255];
+
+    this.redColour = [255, 0, 0, 255];
+
     /**
     * Array of four floats. It represents Light A's position <strong>XYZ</strong> and intensity <strong>I</strong> as [X, Y, Z, I]. Intensity should be in range 0.0 - 1.0.
     * @member {Number[]} xViewer#lightA
     */
     this.lightA = [0, 1000000, 200000, 0.8];
+
     /**
     * Array of four floats. It represents Light B's position <strong>XYZ</strong> and intensity <strong>I</strong> as [X, Y, Z, I]. Intensity should be in range 0.0 - 1.0.
     * @member {Number[]} xViewer#lightB
@@ -1266,7 +1388,8 @@ function xViewer(canvas) {
     this.lightB = [0, -500000, 50000, 0.2];
 
     /**
-    * Switch between different navigation modes for left mouse button. Allowed values: <strong> 'pan', 'zoom', 'orbit' (or 'fixed-orbit') , 'free-orbit' and 'none'</strong>. Default value is <strong>'orbit'</strong>;
+    * Switch between different navigation modes for left mouse button. Allowed values: <strong> 'pan', 'zoom', 'orbit' (or 'fixed-orbit') , 'free-orbit' and 'none'</strong>.
+    * Default value is ]\<strong>'orbit'</strong>;
     * @member {String} xViewer#navigationMode
     */
     this.navigationMode = 'orbit';
@@ -1279,7 +1402,7 @@ function xViewer(canvas) {
     */
     this.renderingMode = 'normal';
 
-    /** 
+    /**
     * Clipping plane [a, b, c, d] defined as normal equation of the plane ax + by + cz + d = 0. [0,0,0,0] is for no clipping plane.
     * @member {Number[]} xViewer#clippingPlane
     */
@@ -1287,9 +1410,8 @@ function xViewer(canvas) {
 
     this._lastClippingPoint = [0, 0, 0];
 
-
     //*************************** Do all the set up of WebGL **************************
-    var gl = WebGLUtils.setupWebGL(this._canvas);
+    const gl = WebGLUtils.setupWebGL(this._canvas);
 
     //do not even initialize this object if WebGL is not supported
     if (!gl) {
@@ -1300,10 +1422,10 @@ function xViewer(canvas) {
 
     //detect floating point texture support
     this._fpt = (
-	gl.getExtension('OES_texture_float') ||
-	gl.getExtension('MOZ_OES_texture_float') ||
-	gl.getExtension('WEBKIT_OES_texture_float')
-	);
+    gl.getExtension('OES_texture_float') ||
+    gl.getExtension('MOZ_OES_texture_float') ||
+    gl.getExtension('WEBKIT_OES_texture_float')
+  );
 
 
     //set up DEPTH_TEST and BLEND so that transparent objects look right
@@ -1352,14 +1474,16 @@ function xViewer(canvas) {
     this._clippingPlaneUniformPointer = null;
     this._meterUniformPointer = null;
     this._renderingModeUniformPointer = null;
+
     this._highlightingColourUniformPointer = null;
+    this._redColourUniformPointer = null;
 
     //transformation matrices
     this._mvMatrix = mat4.create(); 	//world matrix
     this._pMatrix = mat4.create(); 		//camera matrix (this can be either perspective or orthogonal camera)
 
     //Navigation settings - coordinates in the WCS of the origin used for orbiting and panning
-    this._origin = [0, 0, 0]
+    this._origin = [0, 0, 0];
     //Default distance for default views (top, bottom, left, right, front, back)
     this._distance = 0;
     //shader program used for rendering
@@ -1382,7 +1506,7 @@ function xViewer(canvas) {
     this._initAttributesAndUniforms();
     //initialize mouse events to capture user interaction
     this._initMouseEvents();
-};
+}
 
 /**
 * This is a static function which should always be called before xViewer is instantiated.
@@ -1394,29 +1518,29 @@ function xViewer(canvas) {
 */
 xViewer.check = function () {
     /**
-    * This is a structure reporting errors and warnings about prerequisites of {@link xViewer xViewer}. It is result of {@link xViewer.checkPrerequisities checkPrerequisities()} static method.
+    * This is a structure reporting errors and warnings about prerequisites of {@link xViewer xViewer}
     *
     * @name Prerequisites
     * @class
     */
-    var result = {
+    const result = {
         /**
         * If this array contains any warnings xViewer will work but it might be slow or may not support full functionality.
         * @member {string[]}  Prerequisites#warnings
         */
         warnings: [],
         /**
-        * If this array contains any errors xViewer won't work at all or won't work as expected. 
-        * You can use messages in this array to report problems to user. However, user won't probably 
-        * be able to do to much with it except trying to use different browser. IE10- are not supported for example. 
+        * If this array contains any errors xViewer won't work at all or won't work as expected.
+        * You can use messages in this array to report problems to user. However, user won't probably
+        * be able to do to much with it except trying to use different browser. IE10- are not supported for example.
         * The latest version of IE should be all right.
         * @member {string[]}  Prerequisites#errors
         */
         errors: [],
         /**
-        * If false xViewer won't work at all or won't work as expected. 
-        * You can use messages in {@link Prerequisites#errors errors array} to report problems to user. However, user won't probably 
-        * be able to do to much with it except trying to use different browser. IE10- are not supported for example. 
+        * If false xViewer won't work at all or won't work as expected.
+        * You can use messages in {@link Prerequisites#errors errors array} to report problems to user. However, user won't probably
+        * be able to do to much with it except trying to use different browser. IE10- are not supported for example.
         * The latest version of IE should be all right.
         * @member {string[]}  Prerequisites#noErrors
         */
@@ -1429,45 +1553,48 @@ xViewer.check = function () {
     };
 
     //check WebGL support
-    var canvas = document.createElement('canvas');
-    if (!canvas) result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
-    else {
-        var gl = WebGLUtils.setupWebGL(canvas);
-        if (gl == null) result.errors.push("Browser doesn't support WebGL. This is critical.");
+    const canvas = document.createElement('canvas');
+    if (!canvas) {
+      result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
+    } else {
+        const gl = WebGLUtils.setupWebGL(canvas);
+        if (gl === null) result.errors.push("Browser doesn't support WebGL. This is critical.");
         else {
             //check floating point extension availability
-            var fpt = (
-	            gl.getExtension('OES_texture_float') ||
-	            gl.getExtension('MOZ_OES_texture_float') ||
-	            gl.getExtension('WEBKIT_OES_texture_float')
-	            );
+            const fpt = (
+              gl.getExtension('OES_texture_float') ||
+              gl.getExtension('MOZ_OES_texture_float') ||
+              gl.getExtension('WEBKIT_OES_texture_float')
+            );
             if (!fpt) result.warnings.push('Floating point texture extension is not supported. Performance of the viewer will be very bad. But it should work.');
 
             //check number of supported vertex shader textures. Minimum is 5 but standard requires 0.
-            var vertTextUnits = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
+            const vertTextUnits = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
             if (vertTextUnits < 4) result.errors.push("Browser supports only " + vertTextUnits + " vertex texture image units but minimal requirement for the viewer is 4.");
         }
     }
 
     //check FileReader and Blob support
     if (!window.File || !window.FileReader ||  !window.Blob)  result.errors.push("Browser doesn't support 'File', 'FileReader' or 'Blob' objects.");
-    
 
     //check for typed arrays
     if (!window.Int32Array || !window.Float32Array) result.errors.push("Browser doesn't support TypedArrays. These are crucial for binary parsing and for comunication with GPU.");
-    
+
     //check SVG support
-    if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
+    if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) {
+      result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
+    }
 
     //set boolean members for convenience
-    if (result.errors.length == 0) result.noErrors = true;
-    if (result.warnings.length == 0) result.noWarnings = true;
+    if (result.errors.length === 0) result.noErrors = true;
+    if (result.warnings.length === 0) result.noWarnings = true;
+
     return result;
 };
 
 /**
 * Adds plugin to the viewer. Plugins can implement certain methods which get called in certain moments in time like
-* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others. 
+* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others.
 * @function xViewer#addPlugin
 * @param {object} plugin - plug-in object
 */
@@ -1480,12 +1607,12 @@ xViewer.prototype.addPlugin = function (plugin) {
 
 /**
 * Removes plugin from the viewer. Plugins can implement certain methods which get called in certain moments in time like
-* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others. 
+* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others.
 * @function xViewer#removePlugin
 * @param {object} plugin - plug-in object
 */
 xViewer.prototype.removePlugin = function (plugin) {
-    var index = this._plugins.indexOf(plugin, 0);
+    const index = this._plugins.indexOf(plugin, 0);
     if (index < 0) return;
     this._plugins.splice(index, 1);
 };
@@ -1497,12 +1624,12 @@ xViewer.prototype.removePlugin = function (plugin) {
 * @param {Number[]} colour - Array of four numbers in range 0 - 255 representing RGBA colour. If there are less or more numbers exception is thrown.
 */
 xViewer.prototype.defineStyle = function (index, colour) {
-    if (typeof (index) == 'undefined' || (index < 0 && index > 224)) throw 'Style index has to be defined as a number 0-224';
-    if (typeof (colour) == 'undefined' || colour.length == 'undefined' || colour.length != 4) throw 'Colour must be defined as an array of 4 bytes';
+    if (typeof (index) === 'undefined' || (index < 0 && index > 224)) throw 'Style index has to be defined as a number 0-224';
+    if (typeof (colour) === 'undefined' || colour.length === 'undefined' || colour.length !== 4) throw 'Colour must be defined as an array of 4 bytes';
     this._stylingChanged = true;
 
     //set style to style texture via model handle
-    var colData = new Uint8Array(colour);
+    const colData = new Uint8Array(colour);
     this._stateStyles.set(colData, index * 4);
 
     //if there are some handles already set this style in there
@@ -1512,10 +1639,8 @@ xViewer.prototype.defineStyle = function (index, colour) {
     }, this);
 };
 
-    
-
 /**
-* You can use this function to change state of products in the model. State has to have one of values from {@link xState xState} enumeration. 
+* You can use this function to change state of products in the model. State has to have one of values from {@link xState xState} enumeration.
 * Target is either enumeration from {@link xProductType xProductType} or array of product IDs. If you specify type it will effect all elements of the type.
 *
 * @function xViewer#setState
@@ -1523,7 +1648,7 @@ xViewer.prototype.defineStyle = function (index, colour) {
 * @param {Number[] | Number} target - Target of the change. It can either be array of product IDs or product type from {@link xProductType xProductType}.
 */
 xViewer.prototype.setState = function (state, target) {
-    if (typeof (state) == 'undefined' || !(state >= 225 && state <= 255)) throw 'State has to be defined as 225 - 255. Use xState enum.';
+    if (typeof (state) === 'undefined' || !(state >= 225 && state <= 255)) throw 'State has to be defined as 225 - 255. Use xState enum.';
     this._handles.forEach(function (handle) {
         handle.setState(state, target);
     }, this);
@@ -1531,37 +1656,39 @@ xViewer.prototype.setState = function (state, target) {
 };
 
 /**
-* Use this function to get state of the products in the model. You can compare result of this function 
+* Use this function to get state of the products in the model. You can compare result of this function
 * with one of values from {@link xState xState} enumeration. 0xFF is the default value.
 *
 * @function xViewer#getState
 * @param {Number} id - Id of the product. You would typically get the id from {@link xViewer#event:pick pick event} or similar event.
 */
 xViewer.prototype.getState = function (id) {
-    var state = null;
+    let state = null;
     this._handles.forEach(function (handle) {
         state = handle.getState(id);
         if (state !== null) {
-            return;
+            return null;
         }
     }, this);
+
     return state;
 };
 
 /**
-* Use this function to reset state of all products to 'UNDEFINED' which means visible and not highlighted. 
+* Use this function to reset state of all products to 'UNDEFINED' which means visible and not highlighted.
 * You can use optional hideSpaces parameter if you also want to show spaces. They will be hidden by default.
-* 
+*
 * @function xViewer#resetStates
-* @param {Bool} [hideSpaces = true] - Default state is UNDEFINED which would also show spaces. That is often not 
+* @param [hideSpaces = true] - Default state is UNDEFINED which would also show spaces. That is often not
 * desired so it can be excluded with this parameter.
 */
 xViewer.prototype.resetStates = function (hideSpaces) {
     this._handles.forEach(function (handle) {
         handle.resetStates();
     }, this);
+
     //hide spaces
-    hideSpaces = typeof (hideSpaces) != 'undefined' ? hideSpaces : true;
+    hideSpaces = typeof (hideSpaces) !== 'undefined' ? hideSpaces : true;
     if (hideSpaces){
         this._handles.forEach(function (handle) {
             handle.setState(xState.HIDDEN, xProductType.IFCSPACE);
@@ -1572,12 +1699,12 @@ xViewer.prototype.resetStates = function (hideSpaces) {
 
 /**
  * Gets complete model state and style. Resulting object can be used to restore the state later on.
- * 
+ *
  * @param {Number} id - Model ID which you can get from {@link xViewer#event:loaded loaded} event.
  * @returns {Array} - Array representing model state in compact form suitable for serialization
  */
 xViewer.prototype.getModelState = function (id) {
-    var handle = this._handles[id];
+    const handle = this._handles[id];
     if (typeof (handle) === "undefined") {
         throw "Model doesn't exist";
     }
@@ -1591,7 +1718,7 @@ xViewer.prototype.getModelState = function (id) {
  * @param {Array} state - State of the model as obtained from {@link xViewer#getModelState getModelState()} function
  */
 xViewer.prototype.restoreModelState = function (id, state) {
-    var handle = this._handles[id];
+    const handle = this._handles[id];
     if (typeof (handle) === "undefined") {
         throw "Model doesn't exist";
     }
@@ -1601,33 +1728,37 @@ xViewer.prototype.restoreModelState = function (id, state) {
 };
 
 /**
-* Use this method for restyling of the model. This doesn't change the default appearance of the products so you can think about it as an overlay. You can 
-* remove the overlay if you set the style to {@link xState#UNSTYLED xState.UNSTYLED} value. You can combine restyling and hiding in this way. 
-* Use {@link xViewer#defineStyle defineStyle()} to define styling first. 
-* 
+* Use this method for restyling of the model. This doesn't change the default appearance of the products so you can think about it as an overlay. You can
+* remove the overlay if you set the style to {@link xState#UNSTYLED xState.UNSTYLED} value. You can combine restyling and hiding in this way.
+* Use {@link xViewer#defineStyle defineStyle()} to define styling first.
+*
 * @function xViewer#setStyle
 * @param style - style defined in {@link xViewer#defineStyle defineStyle()} method
 * @param {Number[] | Number} target - Target of the change. It can either be array of product IDs or product type from {@link xProductType xProductType}.
 */
 xViewer.prototype.setStyle = function (style, target) {
-    if (typeof (style) == 'undefined' || !(style >= 0 && style <= 225)) throw 'Style has to be defined as 0 - 225 where 225 is for default style.';
-    var c = [
+    if (typeof (style) === 'undefined' || !(style >= 0 && style <= 225)) throw 'Style has to be defined as 0 - 225 where 225 is for default style.';
+
+    const c = [
         this._stateStyles[style * 4],
         this._stateStyles[style * 4 + 1],
         this._stateStyles[style * 4 + 2],
         this._stateStyles[style * 4 + 3]
     ];
-    if (c[0] == 0 && c[1] == 0 && c[2] == 0 && c[3] == 0 && console && console.warn)
+
+    if (c[0] === 0 && c[1] === 0 && c[2] === 0 && c[3] === 0 && console && console.warn) {
         console.warn('You have used undefined colour for restyling. Elements with this style will have transparent black colour and hence will be invisible.');
+    }
 
     this._handles.forEach(function (handle) {
         handle.setState(style, target);
     }, this);
+
     this._stylingChanged = true;
 };
 
 /**
-* Use this function to get overriding colour style of the products in the model. The number you get is the index of 
+* Use this function to get overriding colour style of the products in the model. The number you get is the index of
 * your custom colour which you have defined in {@link xViewer#defineStyle defineStyle()} function. 0xFF is the default value.
 *
 * @function xViewer#getStyle
@@ -1635,7 +1766,7 @@ xViewer.prototype.setStyle = function (style, target) {
 */
 xViewer.prototype.getStyle = function (id) {
     this._handles.forEach(function (handle) {
-        var style = handle.getStyle(id);
+        const style = handle.getStyle(id);
         if (style !== null) {
             return style;
         }
@@ -1646,7 +1777,7 @@ xViewer.prototype.getStyle = function (id) {
 /**
 * Use this function to reset appearance of all products to their default styles.
 *
-* @function xViewer#resetStyles 
+* @function xViewer#resetStyles
 */
 xViewer.prototype.resetStyles = function () {
     this._handles.forEach(function (handle) {
@@ -1656,15 +1787,15 @@ xViewer.prototype.resetStyles = function () {
 };
 
 /**
-* 
+*
 * @function xViewer#getProductType
 * @return {Number} Product type ID. This is either null if no type is identified or one of {@link xProductType type ids}.
-* @param {Number} prodID - Product ID. You can get this value either from semantic structure of the model or by listening to {@link xViewer#event:pick pick} event.
+* @param {Number} prodId - Product ID. You can get this value either from semantic structure of the model or by listening to {@link xViewer#event:pick pick} event.
 */
 xViewer.prototype.getProductType = function (prodId) {
-    var pType = null;
+    let pType = null;
     this._handles.forEach(function (handle) {
-        var map = handle.getProductMap(prodId);
+        const map = handle.getProductMap(prodId);
         if (map) pType = map.type;
     }, this);
     return pType;
@@ -1672,14 +1803,14 @@ xViewer.prototype.getProductType = function (prodId) {
 
 /**
 * Use this method to set position of camera. Use it after {@link xViewer#setCameraTarget setCameraTarget()} to get desired result.
-* 
+*
 * @function xViewer#setCameraPosition
 * @param {Number[]} coordinates - 3D coordinates of the camera in WCS
 */
 xViewer.prototype.setCameraPosition = function (coordinates) {
-    if (typeof (coordinates) == 'undefined') throw 'Parameter coordinates must be defined';
+    if (typeof (coordinates) === 'undefined') throw 'Parameter coordinates must be defined';
     mat4.lookAt(this._mvMatrix, coordinates, this._origin, [0,0,1]);
-}
+};
 
 /**
 * This method sets navigation origin to the centroid of specified product's bounding box or to the centre of model if no product ID is specified.
@@ -1687,23 +1818,24 @@ xViewer.prototype.setCameraPosition = function (coordinates) {
 * if you call functions like {@link xViewer.show show()} or {@link xViewer#zoomTo zoomTo()}.
 * @function xViewer#setCameraTarget
 * @param {Number} prodId [optional] Product ID. You can get ID either from semantic structure of the model or from {@link xViewer#event:pick pick event}.
-* @return {Bool} True if the target exists and is set, False otherwise
+* @return True if the target exists and is set, False otherwise
 */
 xViewer.prototype.setCameraTarget = function (prodId) {
-    var viewer = this;
+    const viewer = this;
+
     //helper function for setting of the distance based on camera field of view and size of the product's bounding box
-    var setDistance = function (bBox) {
-        var size = Math.max(bBox[3], bBox[4], bBox[5]);
-        var ratio = Math.max(viewer._width, viewer._height) / Math.min(viewer._width, viewer._height);
-        viewer._distance = size / Math.tan(viewer.perspectiveCamera.fov * Math.PI / 180.0) * ratio * 1.0;
-    }
+    const setDistance = function (bBox) {
+        const size = Math.max(bBox[3], bBox[4], bBox[5]);
+        const ratio = Math.max(viewer._width, viewer._height) / Math.min(viewer._width, viewer._height);
+        viewer._distance = size / Math.tan(viewer.perspectiveCamera.fov * Math.PI / 180.0) * ratio;
+    };
 
     //set navigation origin and default distance to the product BBox
-    if (typeof (prodId) != 'undefined' && prodId != null) {
+    if (typeof (prodId) !== 'undefined' && prodId != null) {
         //get product BBox and set it's centre as a navigation origin
-        var bbox = null;
+        let bbox = null;
         this._handles.every(function (handle) {
-            var map = handle.getProductMap(prodId);
+            const map = handle.getProductMap(prodId);
             if (map) {
                 bbox = map.bBox;
                 return false;
@@ -1714,18 +1846,16 @@ xViewer.prototype.setCameraTarget = function (prodId) {
             this._origin = [bbox[0] + bbox[3] / 2.0, bbox[1] + bbox[4] / 2.0, bbox[2] + bbox[5] / 2.0];
             setDistance(bbox);
             return true;
-        }
-        else
+        } else {
             return false;
-    }
-        //set navigation origin and default distance to the most populated region from the first model
-    else {
+        }
+    } else {
         //get region extent and set it's centre as a navigation origin
-        var handle = this._handles[0];
+        const handle = this._handles[0];
         if (handle) {
-            var region = handle.region
+            const region = handle.region;
             if (region) {
-                this._origin = [region.centre[0], region.centre[1], region.centre[2]]
+                this._origin = [region.centre[0], region.centre[1], region.centre[2]];
                 setDistance(region.bbox);
             }
         }
@@ -1748,60 +1878,85 @@ xViewer.prototype.set = function (settings) {
 * This method is used to load model data into viewer. Model has to be either URL to wexBIM file or Blob or File representing wexBIM file binary data. Any other type of argument will throw an exception.
 * Region extend is determined based on the region of the model
 * Default view if 'front'. If you want to define different view you have to set it up in handler of {@link xViewer#event:loaded loaded} event. <br>
-* You can load more than one model if they occupy the same space, use the same scale and have unique product IDs. Duplicated IDs won't affect 
+* You can load more than one model if they occupy the same space, use the same scale and have unique product IDs. Duplicated IDs won't affect
 * visualization itself but would cause unexpected user interaction (picking, zooming, ...)
 * @function xViewer#load
 * @param {String | Blob | File} model - Model has to be either URL to wexBIM file or Blob or File representing wexBIM file binary data.
-* @param {Any} tag [optional] - Tag to be used to identify the model in {@link xViewer#event:loaded loaded} event.
+* @param tag - tag to be used to identify the model
+* @param progressCallback
+* @param appendOptions
 * @fires xViewer#loaded
 */
-xViewer.prototype.load = function (model, tag) {
-    if (typeof (model) == 'undefined') throw 'You have to specify model to load.';
-    if (typeof(model) != 'string' && !(model instanceof Blob) && !(model instanceof File))
+xViewer.prototype.load = function (model, tag, progressCallback, appendOptions) {
+    if (appendOptions === undefined) appendOptions = null;
+    if (typeof (model) === 'undefined') throw 'You have to specify model to load.';
+    if (typeof(model) !== 'string' && !(model instanceof Blob) && !(model instanceof File))
         throw 'Model has to be specified either as a URL to wexBIM file or Blob object representing the wexBIM file.';
-    var viewer = this;
 
-    var geometry = new xModelGeometry();
+    const viewer = this;
+
+    if (progressCallback) {
+        progressCallback('modelLoaderStage.rendering');
+    }
+
+    // noinspection JSPotentiallyInvalidConstructorUsage
+    const geometry = new xModelGeometry();
+    geometry.id = xModelGeometry._instancesNum;
     geometry.onloaded = function () {
-        viewer._addHandle(geometry, tag);
+        viewer._addHandle(geometry, tag, appendOptions);
     };
     geometry.onerror = function (msg) {
         viewer._error(msg);
-    }
+    };
     geometry.load(model);
+
+    if (appendOptions) {
+        xModelGeometry._appendedModels[geometry.id] = {
+            options: appendOptions,
+            productIdsMap: []
+        };
+    }
+
+    xModelGeometry._instancesNum++;
 };
 
-//this is a private function used to add loaded geometry as a new handle and to set up camera and 
-//default view if this is the first geometry loaded
-xViewer.prototype._addHandle = function (geometry, tag) {
-    var viewer = this;
-    var gl = this._gl;
+xViewer.prototype.append = function (model, tag, options) {
+    this.load(model, tag, undefined, options);
+};
 
-    var handle = new xModelHandle(viewer._gl, geometry, viewer._fpt != null);
+//this is a private function used to add loaded geometry as a new handle and to set up camera and
+//default view if this is the first geometry loaded
+xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
+    const viewer = this;
+    const gl = this._gl;
+
+    // noinspection JSPotentiallyInvalidConstructorUsage
+    const handle = new xModelHandle(viewer._gl, geometry, viewer._fpt != null);
     viewer._handles.push(handle);
 
     handle.stateStyle = viewer._stateStyles;
     handle.feedGPU();
 
     //get one meter size from model and set it to shader
-    var meter = handle._model.meter;
+    const meter = handle._model.meter;
     gl.uniform1f(viewer._meterUniformPointer, meter);
 
     //only set camera parameters and the view if this is the first model
-    if (viewer._handles.length === 1) {
+    if (viewer._handles.length === 1 && !appendOptions) {
         //set centre and default distance based on the most populated region in the model
         viewer.setCameraTarget();
 
         //set perspective camera near and far based on 1 meter dimension and size of the model
-        var region = handle.region;
-        var maxSize = Math.max(region.bbox[3], region.bbox[4], region.bbox[5]);
+        const region = handle.region;
+        const maxSize = Math.max(region.bbox[3], region.bbox[4], region.bbox[5]);
         viewer.perspectiveCamera.far = maxSize * 50;
         viewer.perspectiveCamera.near = meter / 10.0;
 
         //set orthogonalCamera boundaries so that it makes a sense
         viewer.orthogonalCamera.far = viewer.perspectiveCamera.far;
         viewer.orthogonalCamera.near = viewer.perspectiveCamera.near;
-        var ratio = 1.8;
+
+        const ratio = 1.8;
         viewer.orthogonalCamera.top = maxSize / ratio;
         viewer.orthogonalCamera.bottom = maxSize / ratio * -1;
         viewer.orthogonalCamera.left = maxSize / ratio * -1 * viewer._width / viewer._height;
@@ -1809,68 +1964,90 @@ xViewer.prototype._addHandle = function (geometry, tag) {
 
         //set default view
         viewer.setCameraTarget();
-        var dist = Math.sqrt(viewer._distance * viewer._distance / 3.0);
+
+        const dist = Math.sqrt(viewer._distance * viewer._distance / 3.0);
         viewer.setCameraPosition([region.centre[0] + dist * -1.0, region.centre[1] + dist * -1.0, region.centre[2] + dist]);
     }
 
     /**
      * Occurs when geometry model is loaded into the viewer. This event returns object containing ID of the model.
      * This ID can later be used to unload or temporarily stop the model.
-     * 
+     *
      * @event xViewer#loaded
      * @type {object}
      * @param {Number} id - model ID
-     * @param {Any} tag - tag which was passed to 'xViewer.load()' function
-     * 
+     * @param tag - tag which was passed to 'xViewer.load()' function
     */
-    viewer._fire('loaded', { id: handle.id, tag: tag })
+    let eventName = 'loaded';
+    if (appendOptions) {
+        eventName = 'appended';
+
+        if (appendOptions.color !== undefined) {
+            if (appendOptions.color[3] === undefined) {
+                appendOptions.color[3] = 255;
+            }
+
+            const appendedModel = xModelGeometry._appendedModels[geometry.id];
+
+            if (appendedModel && appendedModel.productIdsMap) {
+                const styleIndex = geometry.id;
+                viewer.defineStyle(styleIndex, appendOptions.color);
+
+                for (let productId in appendedModel.productIdsMap) {
+                    viewer.setStyle(styleIndex, [appendedModel.productIdsMap[productId]]);
+                }
+            }
+        }
+    }
+
+    viewer._fire(eventName, { id: handle.id, tag: tag, geometry: geometry });
+
     viewer._geometryLoaded = true;
 };
 
 /**
  * Unloads model from the GPU. This action is not reversible.
- * 
+ *
  * @param {Number} modelId - ID of the model which you can get from {@link xViewer#event:loaded loaded} event.
  */
 xViewer.prototype.unload = function (modelId) {
-    var handle = this._handles.filter(function (h) { return h.id === modelId }).pop();
-    if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist or was unloaded already."
+    let handle = this._handles.filter(function (h) { return h.id === modelId }).pop();
+    if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist or was unloaded already.";
 
     //stop for start so it doesn't interfere with the rendering loop
     handle.stopped = true;
 
     //remove from the array
-    var index = this._handles.indexOf(handle);
+    const index = this._handles.indexOf(handle);
     this._handles.splice(index, 1);
     this._numberOfActiveModels = this._handles.length;
 
     //unload and delete
     handle.unload();
-    delete handle;
+    handle = null;
 };
 
 
 //this function should be only called once during initialization
 //or when shader set-up changes
 xViewer.prototype._initShaders = function () {
-        
-    var gl = this._gl;
-    var viewer = this;
-    var compile = function (shader, code) {
+    const gl = this._gl;
+    const viewer = this;
+    const compile = function (shader, code) {
         gl.shaderSource(shader, code);
         gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
             viewer._error(gl.getShaderInfoLog(shader));
             return null;
         }
-    }
+    };
 
     //fragment shader
-    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     compile(fragmentShader, xShaders.fragment_shader);
-    
+
     //vertex shader (the more complicated one)
-    var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     if (this._fpt != null) compile(vertexShader, xShaders.vertex_shader);
     else compile(vertexShader, xShaders.vertex_shader_noFPT);
 
@@ -1888,7 +2065,7 @@ xViewer.prototype._initShaders = function () {
 };
 
 xViewer.prototype._initAttributesAndUniforms = function () {
-    var gl = this._gl;
+    const gl = this._gl;
 
     //create pointers to uniform variables for transformations
     this._pMatrixUniformPointer = gl.getUniformLocation(this._shaderProgram, "uPMatrix");
@@ -1927,28 +2104,29 @@ xViewer.prototype._initAttributesAndUniforms = function () {
 };
 
 xViewer.prototype._initMouseEvents = function () {
-    var viewer = this;
+    const viewer = this;
 
-    var mouseDown = false;
-    var lastMouseX = null;
-    var lastMouseY = null;
-    var startX = null;
-    var startY = null;
-    var button = 'L';
-    var id = -1;
+    let mouseDown = false;
+    let lastMouseX = null;
+    let lastMouseY = null;
+    let startX = null;
+    let startY = null;
+    let button = 'L';
+    let id = -1;
 
     //set initial conditions so that different gestures can be identified
     function handleMouseDown(event) {
         mouseDown = true;
+
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
         startX = event.clientX;
         startY = event.clientY;
 
         //get coordinates within canvas (with the right orientation)
-        var r = viewer._canvas.getBoundingClientRect();
-        var viewX = startX - r.left;
-        var viewY = viewer._height - (startY - r.top);
+        const r = viewer._canvas.getBoundingClientRect();
+        const viewX = startX - r.left;
+        const viewY = viewer._height - (startY - r.top);
 
         //this is for picking
         id = viewer._getID(viewX, viewY);
@@ -1961,7 +2139,6 @@ xViewer.prototype._initMouseEvents = function () {
         * @param {Number} id - product ID of the element or null if there wasn't any product under mouse
         */
         viewer._fire('mouseDown', {id: id});
-
 
         //keep information about the mouse button
         switch (event.button) {
@@ -1988,16 +2165,27 @@ xViewer.prototype._initMouseEvents = function () {
     function handleMouseUp(event) {
         mouseDown = false;
 
-        var endX = event.clientX;
-        var endY = event.clientY;
+        const endX = event.clientX;
+        const endY = event.clientY;
 
-        var deltaX = Math.abs(endX - startX);
-        var deltaY = Math.abs(endY - startY);
+        const deltaX = Math.abs(endX - startX);
+        const deltaY = Math.abs(endY - startY);
 
         //if it was a longer movement do not perform picking
-        if (deltaX < 3 && deltaY < 3 && button == 'left') {
+        if (deltaX < 3 && deltaY < 3 && button === 'left') {
+            for (let modelId in xModelGeometry._appendedModels) {
+                const appendedModel = xModelGeometry._appendedModels[modelId];
 
-            var handled = false;
+                if (appendedModel.productIdsMap.indexOf(id) !== -1) {
+                    if (appendedModel.options.onClick) {
+                      appendedModel.options.onClick();
+                    }
+
+                    return;
+                }
+            }
+
+            let handled = false;
             viewer._plugins.forEach(function (plugin) {
                 if (!plugin.onBeforePick) {
                     return;
@@ -2023,20 +2211,20 @@ xViewer.prototype._initMouseEvents = function () {
             return;
         }
 
-        if (viewer.navigationMode == 'none') {
+        if (viewer.navigationMode === 'none') {
             return;
         }
 
-        var newX = event.clientX;
-        var newY = event.clientY;
+        const newX = event.clientX;
+        const newY = event.clientY;
 
-        var deltaX = newX - lastMouseX;
-        var deltaY = newY - lastMouseY;
+        const deltaX = newX - lastMouseX;
+        const deltaY = newY - lastMouseY;
 
         lastMouseX = newX;
         lastMouseY = newY;
 
-        if (button == 'left') {
+        if (button === 'left') {
             switch (viewer.navigationMode) {
                 case 'free-orbit':
                     navigate('free-orbit', deltaX, deltaY);
@@ -2054,56 +2242,55 @@ xViewer.prototype._initMouseEvents = function () {
                 case 'zoom':
                     navigate('zoom', deltaX, deltaY);
                     break;
-
-                default:
-                    break;
-
             }
         }
-        if (button == 'middle') {
+
+        if (button === 'middle') {
             navigate('pan', deltaX, deltaY);
         }
-
     }
 
     function handleMouseScroll(event) {
-        if (viewer.navigationMode == 'none') {
+        if (viewer.navigationMode === 'none') {
             return;
         }
+
         if (event.stopPropagation) {
             event.stopPropagation();
         }
         if (event.preventDefault) {
             event.preventDefault();
         }
-        function sign(x) {
-            x = +x // convert to a number
-            if (x === 0 || isNaN(x))
-                return x
-            return x > 0 ? 1 : -1
+
+        function sign(n) {
+            n = +n; // convert to a number
+            if (n === 0 || isNaN(n))
+                return n;
+            return n > 0 ? 1 : -1
         }
 
         //deltaX and deltaY have very different values in different web browsers so fixed value is used for constant functionality.
-        navigate('zoom', sign(event.deltaX) * -1.0, sign(event.deltaY) * -1.0);
+        navigate('zoom', 0, sign(event.deltaY) * -1.0);
     }
 
     function navigate(type, deltaX, deltaY) {
-        if(!viewer._handles || !viewer._handles[0]) return;
-        //translation in WCS is position from [0, 0, 0]
-        var origin = viewer._origin;
-        var camera = viewer.getCameraPosition();
+        if (!viewer._handles || !viewer._handles[0]) return;
 
-        //get origin coordinates in view space
-        var mvOrigin = vec3.transformMat4(vec3.create(), origin, viewer._mvMatrix)
+        // translation in WCS is position from [0, 0, 0]
+        const origin = viewer._origin;
+        const camera = viewer.getCameraPosition();
 
-        //movement factor needs to be dependant on the distance but one meter is a minimum so that movement wouldn't stop when camera is in 0 distance from navigation origin
-        var distanceVec = vec3.subtract(vec3.create(), origin, camera);
-        var distance = Math.max(vec3.length(distanceVec), viewer._handles[0]._model.meter);
+        // get origin coordinates in view space
+        const mvOrigin = vec3.transformMat4(vec3.create(), origin, viewer._mvMatrix);
 
-        //move to the navigation origin in view space
-        var transform = mat4.translate(mat4.create(), mat4.create(), mvOrigin)
+        // movement factor needs to be dependant on the distance but one meter is a minimum so that movement wouldn't stop when camera is in 0 distance from navigation origin
+        const distanceVec = vec3.subtract(vec3.create(), origin, camera);
+        const distance = Math.max(vec3.length(distanceVec), viewer._handles[0]._model.meter);
 
-        //function for conversion from degrees to radians
+        // move to the navigation origin in view space
+        let transform = mat4.translate(mat4.create(), mat4.create(), mvOrigin);
+
+        // function for conversion from degrees to radians
         function degToRad(deg) {
             return deg * Math.PI / 180.0;
         }
@@ -2118,8 +2305,8 @@ xViewer.prototype._initMouseEvents = function () {
             case 'orbit':
                 mat4.rotate(transform, transform, degToRad(deltaY / 4), [1, 0, 0]);
 
-                //z rotation around model z axis
-                var mvZ = vec3.transformMat3(vec3.create(), [0, 0, 1], mat3.fromMat4(mat3.create(), viewer._mvMatrix));
+                // z rotation around model z axis
+                let mvZ = vec3.transformMat3(vec3.create(), [0, 0, 1], mat3.fromMat4(mat3.create(), viewer._mvMatrix));
                 mvZ = vec3.normalize(vec3.create(), mvZ);
                 transform = mat4.rotate(mat4.create(), transform, degToRad(deltaX / 4), mvZ);
 
@@ -2131,25 +2318,33 @@ xViewer.prototype._initMouseEvents = function () {
                 break;
 
             case 'zoom':
-                mat4.translate(transform, transform, [0, 0, deltaX * distance / 20]);
-                mat4.translate(transform, transform, [0, 0, deltaY * distance / 20]);
+                const zoomRatio = deltaY * distance / 20;
+                const maxZoomRation = viewer.perspectiveCamera.far / 30;
+
+                // "deltaY < 0" because the limit applies only when zooming out
+                if (Math.abs(zoomRatio) >= maxZoomRation && deltaY < 0) {
+                  return;
+                }
+
+                mat4.translate(transform, transform, [0, 0, zoomRatio]);
                 break;
 
             default:
                 break;
         }
 
-        //reverse the translation in view space and leave only navigation changes
-        var translation = vec3.negate(vec3.create(), mvOrigin);
+        // reverse the translation in view space and leave only navigation changes
+        const translation = vec3.negate(vec3.create(), mvOrigin);
         transform = mat4.translate(mat4.create(), transform, translation);
 
-        //apply transformation in right order
+        // apply transformation in right order
         viewer._mvMatrix = mat4.multiply(mat4.create(), transform, viewer._mvMatrix);
     }
 
-    //watch resizing of canvas every 500ms
-    var elementHeight = viewer.height;
-    var elementWidth = viewer.width;
+    // watch resizing of canvas every 500ms
+    let elementHeight = viewer.height;
+    let elementWidth = viewer.width;
+
     setInterval(function () {
         if (viewer._canvas.offsetHeight !== elementHeight || viewer._canvas.offsetWidth !== elementWidth) {
             elementHeight = viewer._height = viewer._canvas.height = viewer._canvas.offsetHeight;
@@ -2157,8 +2352,7 @@ xViewer.prototype._initMouseEvents = function () {
         }
     }, 500);
 
-
-    //attach callbacks
+    // attach callbacks
     this._canvas.addEventListener('mousedown', handleMouseDown, true);
     this._canvas.addEventListener('wheel', handleMouseScroll, true);
     window.addEventListener('mouseup', handleMouseUp, true);
@@ -2167,7 +2361,6 @@ xViewer.prototype._initMouseEvents = function () {
     this._canvas.addEventListener('mousemove', function() {
         viewer._userAction = true;
     }, true);
-
 
     /**
     * Occurs when user double clicks on model.
@@ -2186,7 +2379,7 @@ xViewer.prototype._initMouseEvents = function () {
 * @fires xViewer#frame
 */
 xViewer.prototype.draw = function () {
-    if (!this._geometryLoaded || this._handles.length == 0 || !(this._stylingChanged || this._isChanged())) {
+    if (!this._geometryLoaded || this._handles.length === 0 || !(this._stylingChanged || this._isChanged())) {
         if (!this._userAction) return;
     }
     this._userAction = false;
@@ -2202,9 +2395,9 @@ xViewer.prototype.draw = function () {
     //styles are up to date when new frame is drawn
     this._stylingChanged = false;
 
-    var gl = this._gl;
-    var width = this._width;
-    var height = this._height;
+    const gl = this._gl;
+    const width = this._width;
+    const height = this._height;
 
     gl.useProgram(this._shaderProgram);
     gl.viewport(0, 0, width, height);
@@ -2218,7 +2411,8 @@ xViewer.prototype.draw = function () {
             break;
 
         case 'orthogonal':
-            mat4.ortho(this._pMatrix, this.orthogonalCamera.left, this.orthogonalCamera.right, this.orthogonalCamera.bottom, this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
+            mat4.ortho(this._pMatrix, this.orthogonalCamera.left, this.orthogonalCamera.right, this.orthogonalCamera.bottom,
+                       this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
             break;
 
         default:
@@ -2238,14 +2432,13 @@ xViewer.prototype.draw = function () {
 
     //update highlighting colour
     gl.uniform4fv(this._highlightingColourUniformPointer, new Float32Array(
-        [this.highlightingColour[0]/255.0, 
-        this.highlightingColour[1]/255.0, 
-        this.highlightingColour[2]/255.0, 
+        [this.highlightingColour[0]/255.0,
+        this.highlightingColour[1]/255.0,
+        this.highlightingColour[2]/255.0,
         this.highlightingColour[3]/255.0]));
 
     //check for x-ray mode
-    if (this.renderingMode == 'x-ray')
-    {
+    if (this.renderingMode === 'x-ray') {
         //two passes - first one for non-transparent objects, second one for all the others
         gl.uniform1i(this._renderingModeUniformPointer, 2);
         gl.disable(gl.CULL_FACE);
@@ -2266,8 +2459,7 @@ xViewer.prototype.draw = function () {
             }
         }, this);
         gl.uniform1i(this._renderingModeUniformPointer, 0);
-    }
-    else {
+    } else {
         gl.uniform1i(this._renderingModeUniformPointer, 0);
         gl.disable(gl.CULL_FACE);
 
@@ -2287,7 +2479,7 @@ xViewer.prototype.draw = function () {
             }
         }, this);
     }
-    
+
     //call all after-draw plugins
     this._plugins.forEach(function (plugin) {
         if (!plugin.onAfterDraw) {
@@ -2299,20 +2491,22 @@ xViewer.prototype.draw = function () {
     /**
      * Occurs after every frame in animation. Don't do anything heavy weighted in here as it will happen about 60 times in a second all the time.
      *
-     * @event xViewer#frame 
+     * @event xViewer#frame
      * @type {object}
      */
     this._fire('frame', {});
 };
 
 xViewer.prototype._isChanged = function () {
-    var theSame = true;
+    let theSame = true;
+
     this._visualStateAttributes.forEach(function (visualStateAttribute) {
-        var state = JSON.stringify(this[visualStateAttribute]);
-        var lastState = this._lastStates[visualStateAttribute];
+        const state = JSON.stringify(this[visualStateAttribute]);
+        const lastState = this._lastStates[visualStateAttribute];
         this._lastStates[visualStateAttribute] = state;
         theSame = theSame && (state === lastState)
     }, this);
+
     return !theSame;
 };
 
@@ -2321,36 +2515,39 @@ xViewer.prototype._isChanged = function () {
 * @function xViewer#getCameraPosition
 */
 xViewer.prototype.getCameraPosition = function () {
-    var transform = mat4.create();
+    const transform = mat4.create();
     mat4.multiply(transform, this._pMatrix, this._mvMatrix);
-    var inv = mat4.create()
+
+    const inv = mat4.create();
     mat4.invert(inv, transform);
-    var eye = vec3.create();
+
+    const eye = vec3.create();
     vec3.transformMat4(eye, vec3.create(), inv);
 
     return eye;
-}
+};
 
 /**
 * Use this method to zoom to specified element. If you don't specify a product ID it will zoom to full extent.
 * @function xViewer#zoomTo
 * @param {Number} [id] Product ID
-* @return {Bool} True if target exists and zoom was successful, False otherwise
+* @return True if target exists and zoom was successful, False otherwise
 */
 xViewer.prototype.zoomTo = function (id) {
-    var found = this.setCameraTarget(id);
-    if (!found)  return false;
+    const found = this.setCameraTarget(id);
+    if (!found) return false;
 
-    var eye = this.getCameraPosition();
-    var dir = vec3.create();
+    const eye = this.getCameraPosition();
+    let dir = vec3.create();
     vec3.subtract(dir, eye, this._origin);
     dir = vec3.normalize(vec3.create(), dir);
 
-    var translation = vec3.create();
+    const translation = vec3.create();
     vec3.scale(translation, dir, this._distance);
     vec3.add(eye, translation, this._origin);
 
     mat4.lookAt(this._mvMatrix, eye, this._origin, [0, 0, 1]);
+
     return true;
 };
 
@@ -2358,15 +2555,16 @@ xViewer.prototype.zoomTo = function (id) {
 * Use this function to show default views.
 *
 * @function xViewer#show
-* @param {String} type - Type of view. Allowed values are <strong>'top', 'bottom', 'front', 'back', 'left', 'right'</strong>. 
+* @param {String} type - Type of view. Allowed values are <strong>'top', 'bottom', 'front', 'back', 'left', 'right'</strong>.
 * Directions of this views are defined by the coordinate system. Target and distance are defined by {@link xViewer#setCameraTarget setCameraTarget()} method to certain product ID
 * or to the model extent if {@link xViewer#setCameraTarget setCameraTarget()} is called with no arguments.
 */
 xViewer.prototype.show = function (type) {
-    var origin = this._origin;
-    var distance = this._distance;
-    var camera = [0, 0, 0];
-    var heading = [0, 0, 1];
+    const origin = this._origin;
+    const distance = this._distance;
+    const heading = [0, 0, 1];
+    let camera = [0, 0, 0];
+
     switch (type) {
         //top and bottom are different because these are singular points for look-at function if heading is [0,0,1]
         case 'top':
@@ -2375,9 +2573,9 @@ xViewer.prototype.show = function (type) {
             return;
         case 'bottom':
             //only move to origin and up and rotate 180 degrees around Y axis
-            var toOrigin = mat4.translate(mat4.create(), mat4.create(), [origin[0] * -1.0, origin[1] * +1.0, (origin[2] + distance) * -1]);
-            var rotationY = mat4.rotateY(mat4.create(), toOrigin, Math.PI);
-            var rotationZ = mat4.rotateZ(mat4.create(), rotationY, Math.PI);
+            const toOrigin = mat4.translate(mat4.create(), mat4.create(), [origin[0] * -1.0, origin[1] * +1.0, (origin[2] + distance) * -1]);
+            const rotationY = mat4.rotateY(mat4.create(), toOrigin, Math.PI);
+            const rotationZ = mat4.rotateZ(mat4.create(), rotationY, Math.PI);
             this._mvMatrix = rotationZ; // mat4.translate(mat4.create(), rotationZ, [0, 0, -1.0 * distance]);
             return;
 
@@ -2414,7 +2612,6 @@ xViewer.prototype._error = function (msg) {
 //this renders the colour coded model into the memory buffer
 //not to the canvas and use it to identify ID of the object from that
 xViewer.prototype._getID = function (x, y) {
-
     //call all before-drawId plugins
     this._plugins.forEach(function (plugin) {
         if (!plugin.onBeforeDrawId) {
@@ -2423,40 +2620,41 @@ xViewer.prototype._getID = function (x, y) {
         plugin.onBeforeDrawId();
     }, this);
 
-    //it is not necessary to render the image in full resolution so this factor is used for less resolution. 
-    var factor = 2;
-    var gl = this._gl;
-    var width = this._width / factor;
-    var height = this._height / factor;
+    //it is not necessary to render the image in full resolution so this factor is used for less resolution.
+    const factor = 2;
+    const gl = this._gl;
+    const width = this._width / factor;
+    const height = this._height / factor;
     x = x / factor;
     y = y / factor;
 
     //create framebuffer
-    var frameBuffer = gl.createFramebuffer();
+    const frameBuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
 
     // create renderbuffer
-    var renderBuffer = gl.createRenderbuffer();
+    const renderBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
+
     // allocate renderbuffer
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
 
-    var texture = gl.createTexture();
+    const texture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    // Set the parameters so we can render any image size.        
+
+    // Set the parameters so we can render any image size.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-
     // attach renderbuffer and texture
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
         this._error("this combination of attachments does not work");
         return null;
     }
@@ -2489,9 +2687,8 @@ xViewer.prototype._getID = function (x, y) {
     }, this);
 
     //get colour in of the pixel
-    var result = new Uint8Array(4);
+    const result = new Uint8Array(4);
     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, result);
-
 
     //reset framebuffer to render into canvas again
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -2506,10 +2703,10 @@ xViewer.prototype._getID = function (x, y) {
     gl.enable(gl.BLEND);
 
     //decode ID (bit shifting by multiplication)
-    var hasValue = result[3] != 0; //0 transparency is only for no-values
+    const hasValue = result[3] !== 0; //0 transparency is only for no-values
     if (hasValue) {
-        var id = result[0] + result[1] * 256 + result[2] * 256 * 256;
-        var handled = false;
+        const id = result[0] + result[1] * 256 + result[2] * 256 * 256;
+        let handled = false;
         this._plugins.forEach(function (plugin) {
             if (!plugin.onBeforeGetId) {
                 return;
@@ -2532,11 +2729,11 @@ xViewer.prototype._getID = function (x, y) {
 * This function is bound to browser framerate of the screen so it will stop consuming any resources if you switch to another tab.
 *
 * @function xViewer#start
-* @param {Number} id [optional] - Optional ID of the model to be stopped. You can get this ID from {@link xViewer#event:loaded loaded} event.
+* @param id [optional] - Optional ID of the model to be stopped. You can get this ID from {@link xViewer#event:loaded loaded} event.
 */
 xViewer.prototype.start = function (id) {
     if (typeof (id) !== "undefined") {
-        var model = this._handles.filter(function (h) { return h.id === id; }).pop();
+        const model = this._handles.filter(function (h) { return h.id === id; }).pop();
         if (typeof (model) === "undefined")
             throw "Model doesn't exist.";
 
@@ -2546,28 +2743,29 @@ xViewer.prototype.start = function (id) {
     }
 
     this._isRunning = true;
-    var viewer = this;
-    var lastTime = new Date();
-    var counter = 0;
+    const viewer = this;
+    let lastTime = new Date();
+    let counter = 0;
+
     function tick() {
         counter++;
-        if (counter == 30) {
+        if (counter === 30) {
             counter = 0;
-            var newTime = new Date();
-            var span = newTime.getTime() - lastTime.getTime();
+            const newTime = new Date();
+            const span = newTime.getTime() - lastTime.getTime();
             lastTime = newTime;
-            var fps = 1000 / span * 30;
+            const fps = 1000 / span * 30;
             /**
             * Occurs after every 30th frame in animation. Use this event if you want to report FPS to the user. It might also be interesting performance measure.
             *
-            * @event xViewer#fps 
+            * @event xViewer#fps
             * @type {Number}
             */
             viewer._fire('fps', Math.floor(fps) );
         }
 
         if (viewer._isRunning) {
-            window.requestAnimFrame(tick)
+            window.requestAnimFrame(tick);
             viewer.draw()
         }
     }
@@ -2575,19 +2773,19 @@ xViewer.prototype.start = function (id) {
 };
 
 /**
-* Use this function to stop animation of the model. User will still be able to see the latest state of the model. You can 
+* Use this function to stop animation of the model. User will still be able to see the latest state of the model. You can
 * switch animation of the model on again by calling {@link xViewer#start start()}.
 *
 * @function xViewer#stop
 * @param {Number} id [optional] - Optional ID of the model to be stopped. You can get this ID from {@link xViewer#event:loaded loaded} event.
 */
 xViewer.prototype.stop = function (id) {
-    if (typeof (id) == "undefined") {
+    if (typeof (id) === "undefined") {
         this._isRunning = false;
         return;
     }
 
-    var model = this._handles.filter(function (h) { return h.id === id; }).pop();
+    const model = this._handles.filter(function (h) { return h.id === id; }).pop();
     if (typeof (model) === "undefined")
         throw "Model doesn't exist.";
 
@@ -2596,7 +2794,7 @@ xViewer.prototype.stop = function (id) {
 };
 
 /**
- * Use this method to register to events of the viewer like {@link xViewer#event:pick pick}, {@link xViewer#event:mouseDown mouseDown}, 
+ * Use this method to register to events of the viewer like {@link xViewer#event:pick pick}, {@link xViewer#event:mouseDown mouseDown},
  * {@link xViewer#event:loaded loaded} and others. You can define arbitrary number
  * of event handlers for any event. You can remove handler by calling {@link xViewer#off off()} method.
  *
@@ -2605,7 +2803,7 @@ xViewer.prototype.stop = function (id) {
  * @param {Object} callback - Callback handler of the event which will consume arguments and perform any custom action.
 */
 xViewer.prototype.on = function (eventName, callback) {
-    var events = this._events;
+    const events = this._events;
     if (!events[eventName]) {
         events[eventName] = [];
     }
@@ -2620,12 +2818,12 @@ xViewer.prototype.on = function (eventName, callback) {
 * @param {Object} callback - Handler to be removed
 */
 xViewer.prototype.off = function (eventName, callback) {
-    var events = this._events;
-    var callbacks = events[eventName];
+    const events = this._events;
+    const callbacks = events[eventName];
     if (!callbacks) {
         return;
     }
-    var index = callbacks.indexOf(callback);
+    const index = callbacks.indexOf(callback);
     if (index >= 0) {
         callbacks.splice(index, 1);
     }
@@ -2633,7 +2831,7 @@ xViewer.prototype.off = function (eventName, callback) {
 
 //executes all handlers bound to event name
 xViewer.prototype._fire = function (eventName, args) {
-    var handlers = this._events[eventName];
+    const handlers = this._events[eventName];
     if (!handlers) {
         return;
     }
@@ -2666,36 +2864,35 @@ xViewer.prototype._enableTextSelection = function () {
 xViewer.prototype._getSVGOverlay = function() {
     //check support for SVG
     if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) return false;
-    var ns = "http://www.w3.org/2000/svg";
+    const ns = "http://www.w3.org/2000/svg";
 
     function getOffsetRect(elem) {
-        var box = elem.getBoundingClientRect();
+        const box = elem.getBoundingClientRect();
 
-        var body = document.body;
-        var docElem = document.documentElement;
+        const body = document.body;
+        const docElem = document.documentElement;
 
-        var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
-        var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+        const scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+        const scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
 
-        var clientTop = docElem.clientTop || body.clientTop || 0;
-        var clientLeft = docElem.clientLeft || body.clientLeft || 0;
-        var clientBottom = docElem.clientBottom || body.clientBottom || 0;
-        var clientRight = docElem.clientRight || body.clientRight || 0;
+        const clientTop = docElem.clientTop || body.clientTop || 0;
+        const clientLeft = docElem.clientLeft || body.clientLeft || 0;
+        const clientBottom = docElem.clientBottom || body.clientBottom || 0;
+        const clientRight = docElem.clientRight || body.clientRight || 0;
 
-
-        var top = Math.round(box.top + scrollTop - clientTop);
-        var left = Math.round(box.left + scrollLeft - clientLeft);
-        var bottom = Math.round(box.top + scrollTop - clientBottom);
-        var right = Math.round(box.left + scrollLeft - clientRight);
+        const top = Math.round(box.top + scrollTop - clientTop);
+        const left = Math.round(box.left + scrollLeft - clientLeft);
+        const bottom = Math.round(box.top + scrollTop - clientBottom);
+        const right = Math.round(box.left + scrollLeft - clientRight);
 
         return { top: top, left: left, width: right - left, height: bottom - top };
     }
 
     //create SVG overlay
-    var svg = document.createElementNS(ns, "svg");
+    const svg = document.createElementNS(ns, "svg");
     //document.body.appendChild(svg);
 
-    var cRect = getOffsetRect(this._canvas);
+    const cRect = getOffsetRect(this._canvas);
 
     svg.style.position = 'absolute';
     svg.style.top = cRect.top + 'px';
@@ -2715,24 +2912,24 @@ xViewer.prototype._getSVGOverlay = function() {
 * @return  {Number[][]} Point and normal defining current clipping plane
 */
 xViewer.prototype.getClip = function () {
-    var cp = this.clippingPlane;
+    const cp = this.clippingPlane;
     if (cp.every(function(e) { return e === 0; })) {
         return [[0, 0, 0], [0, 0, 0]];
     }
 
-    var normal = vec3.normalize([0.0 ,0.0, 0.0], [cp[0], cp[1], cp[2]]);
+    const normal = vec3.normalize([0.0 ,0.0, 0.0], [cp[0], cp[1], cp[2]]);
 
     //test if the last clipping point fits in the condition
-    var lp = this._lastClippingPoint;
-    var test = lp[0] * cp[0] + lp[1] * cp[1] + lp[2] * cp[2] + cp[3];
+    const lp = this._lastClippingPoint;
+    const test = lp[0] * cp[0] + lp[1] * cp[1] + lp[2] * cp[2] + cp[3];
     if (Math.abs(test) < 1e-5) {
         return [lp, normal];
     }
 
     //find the point on the plane
-    var x = cp[0] !== 0 ? -1.0 * cp[3] / cp[0] : 0.0;
-    var y = cp[1] !== 0 ? -1.0 * cp[3] / cp[1] : 0.0;
-    var z = cp[2] !== 0 ? -1.0 * cp[3] / cp[2] : 0.0;
+    const x = cp[0] !== 0 ? -1.0 * cp[3] / cp[0] : 0.0;
+    const y = cp[1] !== 0 ? -1.0 * cp[3] / cp[1] : 0.0;
+    const z = cp[2] !== 0 ? -1.0 * cp[3] / cp[2] : 0.0;
 
     return [[x,y,z], normal];
 };
@@ -2740,7 +2937,7 @@ xViewer.prototype.getClip = function () {
 /**
 * Use this method to clip the model. If you call the function with no arguments interactive clipping will start. This is based on SVG overlay
 * so SVG support is necessary for it. But as WebGL is more advanced technology than SVG it is sound assumption that it is present in the browser.
-* Use {@link xViewer.check xViewer.check()} to make sure it is supported at the very beginning of using of xViewer. Use {@link xViewer#unclip unclip()} method to 
+* Use {@link xViewer.check xViewer.check()} to make sure it is supported at the very beginning of using of xViewer. Use {@link xViewer#unclip unclip()} method to
 * unset clipping plane.
 *
 * @function xViewer#clip
@@ -2749,17 +2946,15 @@ xViewer.prototype.getClip = function () {
 * @fires xViewer#clipped
 */
 xViewer.prototype.clip = function (point, normal) {
-
     //non interactive clipping, all information is there
-    if (typeof (point) != 'undefined' && typeof (normal) != 'undefined') {
-
+    if (typeof (point) !== 'undefined' && typeof (normal) !== 'undefined') {
         this._lastClippingPoint = point;
 
         //compute normal equation of the plane
-        var d = 0.0 - normal[0] * point[0] - normal[1] * point[1] - normal[2] * point[2];
+        const d = 0.0 - normal[0] * point[0] - normal[1] * point[1] - normal[2] * point[2];
 
         //set clipping plane
-        this.clippingPlane = [normal[0], normal[1], normal[2], d]
+        this.clippingPlane = [normal[0], normal[1], normal[2], d];
 
         /**
         * Occurs when model is clipped. This event has empty object.
@@ -2772,20 +2967,20 @@ xViewer.prototype.clip = function (point, normal) {
     }
 
     //********************************************** Interactive clipping ********************************************//
-    var ns = "http://www.w3.org/2000/svg";
-    var svg = this._getSVGOverlay();
-    var viewer = this;
-    var position = {};
-    var down = false;
-    var g = {};
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = this._getSVGOverlay();
+    const viewer = this;
+    const position = {};
+    let down = false;
+    let g = {};
 
-    var handleMouseDown = function (event) {
+    const handleMouseDown = function (event) {
         if (down) return;
         down = true;
 
         viewer._disableTextSelection();
 
-        var r = svg.getBoundingClientRect();
+        const r = svg.getBoundingClientRect();
         position.x = event.clientX - r.left;
         position.y = event.clientY - r.top;
         position.angle = 0.0;
@@ -2795,7 +2990,7 @@ xViewer.prototype.clip = function (point, normal) {
         g.setAttribute('id', 'section');
         svg.appendChild(g);
 
-        var line = document.createElementNS(ns, "line");
+        const line = document.createElementNS(ns, "line");
         g.appendChild(line);
 
         line.setAttribute('style', "stroke:rgb(255,0,0);stroke-width:2");
@@ -2805,52 +3000,51 @@ xViewer.prototype.clip = function (point, normal) {
         line.setAttribute('y2', -99999);
     };
 
-    var handleMouseUp = function (event) {
+    const handleMouseUp = function (event) {
         if (!down) return;
 
-        //check if the points are not identical. 
-        var r = svg.getBoundingClientRect();
-        if (position.x == event.clientX - r.left && position.y == event.clientY - r.top) {
+        //check if the points are not identical.
+        const r = svg.getBoundingClientRect();
+        if (position.x === event.clientX - r.left && position.y === event.clientY - r.top) {
             return;
         }
 
         down = false;
         viewer._enableTextSelection();
 
-
         //get inverse transformation
-        var transform = mat4.create();
+        const transform = mat4.create();
         mat4.multiply(transform, viewer._pMatrix, viewer._mvMatrix);
-        var inverse = mat4.create();
+
+        const inverse = mat4.create();
         mat4.invert(inverse, transform);
 
         //get normalized coordinates the point in WebGL CS
-        var x1 = position.x / (viewer._width / 2.0) - 1.0;
-        var y1 = 1.0 - position.y / (viewer._height / 2.0);
+        const x1 = position.x / (viewer._width / 2.0) - 1.0;
+        const y1 = 1.0 - position.y / (viewer._height / 2.0);
 
         //First point in WCS
-        var A = vec3.create();
+        const A = vec3.create();
         vec3.transformMat4(A, [x1, y1, -1], inverse); //near clipping plane
 
         //Second point in WCS
-        var B = vec3.create();
+        const B = vec3.create();
         vec3.transformMat4(B, [x1, y1, 1], inverse); //far clipping plane
 
         //Compute third point on plane
-        var angle = position.angle * Math.PI / 180.0 ;
-        var x2 = x1 + Math.cos(angle);
-        var y2 = y1 + Math.sin(angle);
+        const angle = position.angle * Math.PI / 180.0 ;
+        const x2 = x1 + Math.cos(angle);
+        const y2 = y1 + Math.sin(angle);
 
         //Third point in WCS
-        var C = vec3.create();
+        const C = vec3.create();
         vec3.transformMat4(C, [x2, y2, 1], inverse); // far clipping plane
 
-
         //Compute normal in WCS
-        var BA = vec3.subtract(vec3.create(), A, B);
-        var BC = vec3.subtract(vec3.create(), C, B);
-        var N = vec3.cross(vec3.create(), BA, BC);
-        
+        const BA = vec3.subtract(vec3.create(), A, B);
+        const BC = vec3.subtract(vec3.create(), C, B);
+        const N = vec3.cross(vec3.create(), BA, BC);
+
         viewer.clip(B, N);
 
         //clean
@@ -2860,27 +3054,27 @@ xViewer.prototype.clip = function (point, normal) {
         window.removeEventListener('mousemove', handleMouseMove, true);
     };
 
-    var handleMouseMove = function (event) {
+    const handleMouseMove = function (event) {
         if (!down) return;
 
-        var r = svg.getBoundingClientRect();
-        var x = event.clientX - r.left;
-        var y = event.clientY - r.top;
+        const r = svg.getBoundingClientRect();
+        const x = event.clientX - r.left;
+        const y = event.clientY - r.top;
 
         //rotate
-        var dX = x - position.x;
-        var dY = y - position.y;
-        var angle = Math.atan2(dX, dY) * -180.0 / Math.PI + 90.0;
+        const dX = x - position.x;
+        const dY = y - position.y;
+        let angle = Math.atan2(dY, dX) * -180.0 / Math.PI + 90.0;
 
         //round to 5 DEG
-        angle = Math.round(angle / 5.0) * 5.0
+        angle = Math.round(angle / 5.0) * 5.0;
         position.angle = 360.0 - angle + 90;
 
         g.setAttribute('transform', 'rotate(' + angle + ' ' + position.x + ' ' + position.y + ')');
-    }
+    };
 
     //this._canvas.parentNode.appendChild(svg);
-    document.documentElement.appendChild(svg)
+    document.documentElement.appendChild(svg);
     svg.addEventListener('mousedown', handleMouseDown, true);
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('mousemove', handleMouseMove, true);
@@ -2897,14 +3091,14 @@ xViewer.prototype.clip = function (point, normal) {
 
 /**
 * This method is only active when interactive clipping is active. It stops interactive clipping operation.
-* 
+*
 * @function xViewer#stopClipping
 */
 //this is only a placeholder. It is actually created only when interactive clipping is active.
 xViewer.prototype.stopClipping = function() {};
 
 /**
-* This method will cancel any clipping plane if it is defined. Use {@link xViewer#clip clip()} 
+* This method will cancel any clipping plane if it is defined. Use {@link xViewer#clip clip()}
 * method to define clipping by point and normal of the plane or interactively if you call it with no arguments.
 * @function xViewer#unclip
 * @fires xViewer#unclipped
@@ -2918,8 +3112,7 @@ xViewer.prototype.unclip = function () {
       * @type {object}
       */
     this._fire('unclipped', {});
-};
-/*
+};/*
  * Copyright 2010, Google Inc.
  * All rights reserved.
  *

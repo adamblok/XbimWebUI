@@ -15,7 +15,7 @@ function xModelGeometry() {
     this.meter = 1000;
 
     //this will be used to change appearance of the objects
-    //map objects have a format: 
+    //map objects have a format:
     //map = {
     //	productID: int,
     //	type: int,
@@ -26,37 +26,67 @@ function xModelGeometry() {
     this.productMap = {};
 }
 
+/**
+ * Static counter to keep unique ID of the model handles
+ */
+xModelGeometry._instancesNum = 0;
+
+/**
+ * Container for information about appended models
+ */
+xModelGeometry._appendedModels = [];
+
+/**
+ * Container which keeps product ids
+ */
+xModelGeometry._productIds = [];
+
+xModelGeometry.prototype.findFreeProductId = function (productId) {
+    while (xModelGeometry._productIds.indexOf(productId) !== -1) {
+        productId += Math.round(Math.random() * 10).toString();
+        productId = parseInt(productId);
+    }
+
+    return productId;
+};
+
+xModelGeometry.prototype.getProductIdForAppendedModel = function (appendedModel, productId) {
+    return appendedModel.productIdsMap[productId];
+};
+
 xModelGeometry.prototype.parse = function (binReader) {
-    var br = binReader;
-    var magicNumber = br.readInt32();
-    if (magicNumber != 94132117) throw 'Magic number mismatch.';
-    var version = br.readByte();
-    var numShapes = br.readInt32();
-    var numVertices = br.readInt32();
-    var numTriangles = br.readInt32();
-    var numMatrices = br.readInt32();;
-    var numProducts = br.readInt32();;
-    var numStyles = br.readInt32();;
-    this.meter = br.readFloat32();;
-    var numRegions = br.readInt16();
+    const br = binReader;
+    const magicNumber = br.readInt32();
+    if (magicNumber !== 94132117) throw 'Magic number mismatch.';
 
-
+    const version = br.readByte();
+    const numShapes = br.readInt32();
+    const numVertices = br.readInt32();
+    const numTriangles = br.readInt32();
+    const numMatrices = br.readInt32();
+    const numProducts = br.readInt32();
+    const numStyles = br.readInt32();
+    this.meter = br.readFloat32();
+    const numRegions = br.readInt16();
 
     //set size of arrays to be square usable for texture data
     //TODO: reflect support for floating point textures
-    var square = function (arity, count) {
-        if (typeof (arity) == 'undefined' || typeof (count) == 'undefined') {
+    const square = function (arity, count) {
+        if (typeof (arity) === 'undefined' || typeof (count) === 'undefined') {
             throw 'Wrong arguments';
         }
-        if (count == 0) return 0;
-        var byteLength = count * arity;
-        var imgSide = Math.ceil(Math.sqrt(byteLength / 4));
+
+        if (count === 0) return 0;
+
+        const byteLength = count * arity;
+        let imgSide = Math.ceil(Math.sqrt(byteLength / 4));
+
         //clamp to parity
-        while ((imgSide * 4) % arity != 0) {
+        while ((imgSide * 4) % arity !== 0) {
             imgSide++
         }
-        var result = imgSide * imgSide * 4 / arity;
-        return result;
+
+        return imgSide * imgSide * 4 / arity;
     };
 
     //create target buffers of correct size (avoid reallocation of memory)
@@ -71,18 +101,22 @@ xModelGeometry.prototype.parse = function (binReader) {
     this.matrices = new Float32Array(square(4, numMatrices * 16));
     this.productMap = {};
     this.regions = new Array(numRegions);
+    this.area = {
+        x: [],
+        y: [],
+        z: []
+    };
 
-    var iVertex = 0;
-    var iIndexForward = 0;
-    var iIndexBackward = numTriangles * 3;
-    var iTransform = 0;
-    var iMatrix = 0;
+    let iVertex = 0;
+    let iIndexForward = 0;
+    let iIndexBackward = numTriangles * 3;
+    let iTransform = 0;
+    let iMatrix = 0;
 
-    var stateEnum = xState;
-    var typeEnum = xProductType;
+    const stateEnum = xState;
+    const typeEnum = xProductType;
 
-
-    for (var i = 0; i < numRegions; i++) {
+    for (let i = 0; i < numRegions; i++) {
         this.regions[i] = {
             population: br.readInt32(),
             centre: br.readFloat32(3),
@@ -90,53 +124,72 @@ xModelGeometry.prototype.parse = function (binReader) {
         }
     }
 
-
-    var styleMap = [];
+    const styleMap = [];
     styleMap.getStyle = function(id) {
-        for (var i = 0; i < this.length; i++) {
-            var item = this[i];
-            if (item.id == id) return item;
+        for (let i = 0; i < this.length; i++) {
+            const item = this[i];
+            if (item.id === id) return item;
         }
         return null;
     };
-    var iStyle = 0;
+
+    let iStyle = 0;
     for (iStyle; iStyle < numStyles; iStyle++) {
-        var styleId = br.readInt32();
-        var R = br.readFloat32() * 255;
-        var G = br.readFloat32() * 255;
-        var B = br.readFloat32() * 255;
-        var A = br.readFloat32() * 255;
+        const styleId = br.readInt32();
+        const R = br.readFloat32() * 255;
+        const G = br.readFloat32() * 255;
+        const B = br.readFloat32() * 255;
+        const A = br.readFloat32() * 255;
+
         this.styles.set([R, G, B, A], iStyle * 4);
         styleMap.push({ id: styleId, index: iStyle, transparent: A < 254 });
     }
+
     this.styles.set([255, 255, 255, 255], iStyle * 4);
-    var defaultStyle = { id: -1, index: iStyle, transparent: A < 254 }
+
+    const defaultStyle = { id: -1, index: iStyle, transparent: 255 };
     styleMap.push(defaultStyle);
 
-    for (var i = 0; i < numProducts ; i++) {
-        var productLabel = br.readInt32();
-        var prodType = br.readInt16();
-        var bBox = br.readFloat32(6);
+    // check if model is appended
+    const modelId = this.id;
+    const appendedModel = xModelGeometry._appendedModels[modelId];
 
-        var map = {
+    for (let i = 0; i < numProducts ; i++) {
+        let productLabel = br.readInt32();
+
+        if (appendedModel) {
+            appendedModel.productIdsMap[productLabel] = this.findFreeProductId(productLabel);
+            productLabel = this.getProductIdForAppendedModel(appendedModel, productLabel);
+        }
+
+        const prodType = br.readInt16();
+        const bBox = br.readFloat32(6);
+
+        this.productMap[productLabel] = {
             productID: productLabel,
             type: prodType,
             bBox: bBox,
             spans: []
         };
-        this.productMap[productLabel] = map;
+
+        xModelGeometry._productIds.push(productLabel);
     }
 
-    for (var iShape = 0; iShape < numShapes; iShape++) {
+    for (let iShape = 0; iShape < numShapes; iShape++) {
+        const repetition = br.readInt32();
+        const shapeList = [];
 
-        var repetition = br.readInt32();
-        var shapeList = [];
-        for (var iProduct = 0; iProduct < repetition; iProduct++) {
-            var prodLabel = br.readInt32();
-            var instanceTypeId = br.readInt16();
-            var instanceLabel = br.readInt32();
-            var styleId = br.readInt32();
-            var transformation = null;
+        for (let iProduct = 0; iProduct < repetition; iProduct++) {
+            let prodLabel = br.readInt32();
+
+            if (appendedModel) {
+                prodLabel = this.getProductIdForAppendedModel(appendedModel, prodLabel);
+            }
+
+            const instanceTypeId = br.readInt16();
+            const instanceLabel = br.readInt32();
+            const styleId = br.readInt32();
+            let transformation = null;
 
             if (repetition > 1) {
                 transformation = version === 1 ? br.readFloat32(16) : br.readFloat64(16);
@@ -144,7 +197,7 @@ xModelGeometry.prototype.parse = function (binReader) {
                 iMatrix += 16;
             }
 
-            var styleItem = styleMap.getStyle(styleId);
+            let styleItem = styleMap.getStyle(styleId);
             if (styleItem === null)
                 styleItem = defaultStyle;
 
@@ -158,13 +211,12 @@ xModelGeometry.prototype.parse = function (binReader) {
         }
 
         //read shape geometry
-        var shapeGeom = new xTriangulatedShape();
+        let shapeGeom = new xTriangulatedShape();
         shapeGeom.parse(br);
-
 
         //copy shape data into inner array and set to null so it can be garbage collected
         shapeList.forEach(function (shape) {
-            var iIndex = 0;
+            let iIndex = 0;
             //set iIndex according to transparency either from beginning or at the end
             if (shape.transparent) {
                 iIndex = iIndexBackward - shapeGeom.indices.length;
@@ -173,8 +225,8 @@ xModelGeometry.prototype.parse = function (binReader) {
                 iIndex = iIndexForward;
             }
 
-            var begin = iIndex;
-            var map = this.productMap[shape.pLabel];
+            const begin = iIndex;
+            let map = this.productMap[shape.pLabel];
             if (typeof (map) === "undefined") {
                 //throw "Product hasn't been defined before.";
                 map = {
@@ -188,13 +240,13 @@ xModelGeometry.prototype.parse = function (binReader) {
 
             this.normals.set(shapeGeom.normals, iIndex * 2);
 
-            //switch spaces and openings off by default 
-            var state = map.type == typeEnum.IFCSPACE || map.type == typeEnum.IFCOPENINGELEMENT ?
-                stateEnum.HIDDEN :
-                0xFF; //0xFF is for the default state
+            //switch spaces and openings off by default
+            const state = map.type === typeEnum.IFCSPACE || map.type === typeEnum.IFCOPENINGELEMENT ?
+                  stateEnum.HIDDEN :
+                  0xFF; //0xFF is for the default state
 
             //fix indices to right absolute position. It is relative to the shape.
-            for (var i = 0; i < shapeGeom.indices.length; i++) {
+            for (let i = 0; i < shapeGeom.indices.length; i++) {
                 this.indices[iIndex] = shapeGeom.indices[i] + iVertex / 3;
                 this.products[iIndex] = shape.pLabel;
                 this.styleIndices[iIndex] = shape.style;
@@ -205,12 +257,55 @@ xModelGeometry.prototype.parse = function (binReader) {
                 iIndex++;
             }
 
-            var end = iIndex;
+            const end = iIndex;
             map.spans.push(new Int32Array([begin, end]));
 
             if (shape.transparent) iIndexBackward -= shapeGeom.indices.length;
             else iIndexForward += shapeGeom.indices.length;
         }, this);
+
+        // get area data
+        let j = 0, axis, vertex;
+
+        for (let i in shapeGeom.vertices) {
+            if (!shapeGeom.vertices.hasOwnProperty(i)) {
+                continue;
+            }
+
+            vertex = shapeGeom.vertices[i];
+
+            if (j > 2) {
+                j = 0;
+            }
+
+            switch (j) {
+                case 0: axis = 'x'; break;
+                case 1: axis = 'y'; break;
+                case 2: axis = 'z'; break;
+            }
+
+            if (appendedModel) {
+                if (appendedModel.options.scale) {
+                    shapeGeom.vertices[i] *= appendedModel.options.scale;
+                }
+
+                switch (axis) {
+                    case 'x': shapeGeom.vertices[i] += appendedModel.options.x; break;
+                    case 'y': shapeGeom.vertices[i] += appendedModel.options.y; break;
+                    case 'z': shapeGeom.vertices[i] += appendedModel.options.z; break;
+                }
+            }
+
+            if (this.area[axis][0] === undefined || vertex < this.area[axis][0]) {
+                this.area[axis][0] = vertex;
+            }
+
+            if (this.area[axis][1] === undefined || vertex > this.area[axis][1]) {
+                this.area[axis][1] = vertex;
+            }
+
+            j++;
+        }
 
         //copy geometry and keep track of amount so that we can fix indices to right position
         //this must be the last step to have correct iVertex number above
@@ -230,8 +325,8 @@ xModelGeometry.prototype.parse = function (binReader) {
 //Source has to be either URL of wexBIM file or Blob representing wexBIM file
 xModelGeometry.prototype.load = function (source) {
     //binary reading
-    var br = new xBinaryReader();
-    var self = this;
+    const br = new xBinaryReader();
+    const self = this;
     br.onloaded = function () {
         self.parse(br);
         if (self.onloaded) {

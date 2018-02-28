@@ -1,11 +1,10 @@
-
+// noinspection JSDuplicatedDeclaration
 /**
 * Enumeration of product types.
 * @readonly
 * @enum {number}
 */
-var xProductType = {
-
+const xProductType = {
     IFCDISTRIBUTIONELEMENT: 44,
     IFCDISTRIBUTIONFLOWELEMENT: 45,
     IFCDISTRIBUTIONCHAMBERELEMENT: 180,

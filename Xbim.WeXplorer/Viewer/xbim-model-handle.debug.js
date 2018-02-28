@@ -1,11 +1,11 @@
-//this class holds pointers to textures, uniforms and data buffers which 
+//this class holds pointers to textures, uniforms and data buffers which
 //make up a model in GPU
 
 //gl: WebGL context
 //model: xModelGeometry
 //fpt: bool (floating point texture support)
 function xModelHandle(gl, model, fpt) {
-    if (typeof (gl) == 'undefined' || typeof (model) == 'undefined' || typeof (fpt) == 'undefined') {
+    if (typeof (gl) === 'undefined' || typeof (model) === 'undefined' || typeof (fpt) === 'undefined') {
         throw 'WebGL context and geometry model must be specified';
     }
 
@@ -14,18 +14,13 @@ function xModelHandle(gl, model, fpt) {
     this._fpt = fpt;
 
     /**
-     * unique ID which can be used to identify this handle 
-     */
-    this.id = xModelHandle._instancesNum++;
-
-    /**
      * indicates if this model should be used in a rendering loop or not.
      */
     this.stopped = false;
 
     this.count = model.indices.length;
 
-    //data structure 
+    //data structure
     this.vertexTexture = gl.createTexture();
     this.matrixTexture = gl.createTexture();
     this.styleTexture = gl.createTexture();
@@ -53,8 +48,9 @@ function xModelHandle(gl, model, fpt) {
             this.region = region;
         }
     }, this);
+
     //set default region if no region is defined. This shouldn't ever happen if model contains any geometry.
-    if (typeof (this.region) == 'undefined') {
+    if (typeof (this.region) === 'undefined') {
         this.region = {
             population: 1,
             centre: [0.0, 0.0, 0.0],
@@ -62,11 +58,6 @@ function xModelHandle(gl, model, fpt) {
         }
     }
 }
-
-/**
- * Static counter to keep unique ID of the model handles
- */
-xModelHandle._instancesNum = 0;
 
 //this function sets this model as an active one
 //it needs an argument 'pointers' which contains pointers to
@@ -83,7 +74,7 @@ xModelHandle._instancesNum = 0;
 //	vertexSamplerUniform: null,
 //	styleSamplerUniform: null,
 //	stateStyleSamplerUniform: null,
-//	
+//
 //	vertexTextureSizeUniform: null,
 //	matrixTextureSizeUniform: null,
 //	styleTextureSizeUniform: null,
@@ -91,7 +82,8 @@ xModelHandle._instancesNum = 0;
 xModelHandle.prototype.setActive = function (pointers) {
     if (this.stopped) return;
 
-    var gl = this._gl;
+    const gl = this._gl;
+
     //set predefined textures
     if (this.vertexTextureSize > 0) {
         gl.activeTexture(gl.TEXTURE1);
@@ -145,7 +137,7 @@ xModelHandle.prototype.setActive = function (pointers) {
 xModelHandle.prototype.draw = function (mode) {
     if (this.stopped) return;
 
-    var gl = this._gl;
+    const gl = this._gl;
 
     if (typeof (mode) === "undefined") {
         //draw image frame
@@ -160,18 +152,14 @@ xModelHandle.prototype.draw = function (mode) {
 
     if (mode === "transparent") {
         gl.drawArrays(gl.TRIANGLES, this._model.transparentIndex, this.count - this._model.transparentIndex);
-        return;
     }
-    
 };
-
-
 
 xModelHandle.prototype.drawProduct = function (ID) {
     if (this.stopped) return;
 
-    var gl = this._gl;
-    var map = this.getProductMap(ID);
+    const gl = this._gl;
+    const map = this.getProductMap(ID);
 
     //var i = 3; //3 is for a glass panel
     //gl.drawArrays(gl.TRIANGLES, map.spans[i][0], map.spans[i][1] - map.spans[i][0]);
@@ -184,13 +172,17 @@ xModelHandle.prototype.drawProduct = function (ID) {
 };
 
 xModelHandle.prototype.getProductMap = function (ID) {
-    var map = this._model.productMap[ID];
-    if (typeof (map) !== "undefined") return map;
+    const map = this._model.productMap[ID];
+
+    if (typeof (map) !== "undefined") {
+      return map;
+    }
+
     return null;
 };
 
 xModelHandle.prototype.unload = function () {
-    var gl = this._gl;
+    const gl = this._gl;
 
     gl.deleteTexture(this.vertexTexture);
     gl.deleteTexture(this.matrixTexture);
@@ -210,8 +202,8 @@ xModelHandle.prototype.feedGPU = function () {
         throw 'GPU can bee fed only once. It discards unnecessary data which cannot be restored again.';
     }
 
-    var gl = this._gl;
-    var model = this._model;
+    const gl = this._gl;
+    const model = this._model;
 
     //fill all buffers
     this._bufferData(this.normalBuffer, model.normals);
@@ -225,6 +217,7 @@ xModelHandle.prototype.feedGPU = function () {
     this.vertexTextureSize = this._bufferTexture(this.vertexTexture, model.vertices, 3);
     this.matrixTextureSize = this._bufferTexture(this.matrixTexture, model.matrices, 4);
     this.styleTextureSize = this._bufferTexture(this.styleTexture, model.styles);
+
     //this has a constant size 15 which is defined in vertex shader
     this._bufferTexture(this.stateStyleTexture, this.stateStyle);
 
@@ -247,31 +240,32 @@ xModelHandle.prototype.refreshStyles = function () {
 };
 
 xModelHandle.prototype._bufferData = function (pointer, data) {
-    var gl = this._gl;
+    const gl = this._gl;
     gl.bindBuffer(gl.ARRAY_BUFFER, pointer);
     gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
 };
 
 xModelHandle.prototype._bufferTexture = function (pointer, data, arity) {
-    var gl = this._gl;
-    if (data.length == 0) return 0;
+    const gl = this._gl;
+    if (data.length === 0) return 0;
 
     //detect floating point texture support and data type
-    var fp = this._fpt && data instanceof Float32Array;
+    const fp = this._fpt && data instanceof Float32Array;
 
     //compute size of the image (length should be correct already)
-    var size = 0;
-    var maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+    let size = 0;
+    const maxSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+
     if (fp) {
         //recompute to smaller size, but make it +1 to make sure it is all right
         size = Math.ceil(Math.sqrt(Math.ceil(data.length / arity))) + 1;
     }
     else {
-        var dim = Math.sqrt(data.byteLength / 4);
+        const dim = Math.sqrt(data.byteLength / 4);
         size = Math.ceil(dim);
     }
 
-    if (size == 0) return 0;
+    if (size === 0) return 0;
     if (size > maxSize) throw 'Too much data! It cannot fit into the texture.';
 
     gl.bindTexture(gl.TEXTURE_2D, pointer);
@@ -281,25 +275,25 @@ xModelHandle.prototype._bufferTexture = function (pointer, data, arity) {
 
     if (fp) {
         //create new data buffer and fill it in with data
-        var image = null;
-        if (size * size * arity != data.length) {
+        let image = null;
+        if (size * size * arity !== data.length) {
             image = new Float32Array(size * size * arity);
             image.set(data);
-        }
-        else {
+        } else {
             image = data;
         }
-        var type = null;
+
+        let type = null;
         switch (arity) {
             case 1: type = gl.ALPHA; break;
             case 3: type = gl.RGB; break;
             case 4: type = gl.RGBA; break;
         }
         gl.texImage2D(gl.TEXTURE_2D, 0, type, size, size, 0, type, gl.FLOAT, image);
-    }
-    else {
+    } else {
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array(data.buffer));
     }
+
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); //Prevents s-coordinate wrapping (repeating).
@@ -310,53 +304,53 @@ xModelHandle.prototype._bufferTexture = function (pointer, data, arity) {
 
 xModelHandle.prototype.getState = function (id) {
     if (typeof (id) === "undefined") throw "id must be defined";
-    var map = this.getProductMap(id);
+
+    const map = this.getProductMap(id);
     if (map === null) return null;
 
-    var span = map.spans[0];
-    if (typeof (span) == "undefined") return null;
+    const span = map.spans[0];
+    if (typeof (span) === "undefined") return null;
 
     return this._model.states[span[0] * 2];
-}
+};
 
 xModelHandle.prototype.getStyle = function (id) {
     if (typeof (id) === "undefined") throw "id must be defined";
-    var map = this.getProductMap(id);
+    const map = this.getProductMap(id);
     if (map === null) return null;
 
-    var span = map.spans[0];
-    if (typeof (span) == "undefined") return null;
+    const span = map.spans[0];
+    if (typeof (span) === "undefined") return null;
 
     return this._model.states[span[0] * 2 + 1];
-}
+};
 
 xModelHandle.prototype.setState = function (state, args) {
-    if (typeof (state) != 'number' && state < 0 && state > 255) throw 'You have to specify state as an ID of state or index in style pallete.';
-    if (typeof (args) == 'undefined') throw 'You have to specify products as an array of product IDs or as a product type ID';
+    if (typeof (state) !== 'number' && state < 0 && state > 255) throw 'You have to specify state as an ID of state or index in style pallete.';
+    if (typeof (args) === 'undefined') throw 'You have to specify products as an array of product IDs or as a product type ID';
 
-    var maps = [];
+    const maps = [];
+
     //it is type
-    if (typeof (args) == 'number') {
-        for (var n in this._model.productMap) {
-            var map = this._model.productMap[n];
-            if (map.type == args) maps.push(map);
+    if (typeof (args) === 'number') {
+        for (let n in this._model.productMap) {
+            const map = this._model.productMap[n];
+            if (map.type === args) maps.push(map);
         }
-    }
-        //it is a list of IDs
-    else {
-        for (var l = 0; l < args.length; l++) {
-            var id = args[l];
-            var map = this.getProductMap(id);
-            if (map != null) maps.push(map);
+    } else { //it is a list of IDs
+        for (let l = 0; l < args.length; l++) {
+            const id = args[l];
+            const map = this.getProductMap(id);
+            if (map !== null) maps.push(map);
         }
     }
 
     //shift +1 if it is an overlay colour style or 0 if it is a state.
-    var shift = state <= 225 ? 1 : 0;
+    const shift = state <= 225 ? 1 : 0;
     maps.forEach(function (map) {
         map.spans.forEach(function (span) {
             //set state or style
-            for (var k = span[0]; k < span[1]; k++) {
+            for (let k = span[0]; k < span[1]; k++) {
                 this._model.states[k * 2 + shift] = state;
             }
         }, this);
@@ -367,7 +361,7 @@ xModelHandle.prototype.setState = function (state, args) {
 };
 
 xModelHandle.prototype.resetStates = function () {
-    for (var i = 0; i < this._model.states.length; i += 2) {
+    for (let i = 0; i < this._model.states.length; i += 2) {
         this._model.states[i] = xState.UNDEFINED;
     }
     //buffer data to GPU
@@ -375,7 +369,7 @@ xModelHandle.prototype.resetStates = function () {
 };
 
 xModelHandle.prototype.resetStyles = function () {
-    for (var i = 0; i < this._model.states.length; i += 2) {
+    for (let i = 0; i < this._model.states.length; i += 2) {
         this._model.states[i + 1] = xState.UNSTYLED;
     }
     //buffer data to GPU
@@ -383,41 +377,43 @@ xModelHandle.prototype.resetStyles = function () {
 };
 
 xModelHandle.prototype.getModelState = function() {
-    var result = [];
-    var products = this._model.productMap; 
-    for (var i in products) {
+    const result = [];
+    const products = this._model.productMap;
+
+    for (let i in products) {
         if (!products.hasOwnProperty(i)) {
             continue;
         }
-        var map = products[i];
-        var span = map.spans[0];
-        if (typeof (span) == "undefined") continue;
 
-        var state = this._model.states[span[0] * 2];
-        var style = this._model.states[span[0] * 2 + 1];
+        const map = products[i];
+        const span = map.spans[0];
+
+        if (typeof (span) === "undefined") continue;
+
+        const state = this._model.states[span[0] * 2];
+        const style = this._model.states[span[0] * 2 + 1];
 
         result.push([map.productID, state + (style << 8)]);
     }
-    return result;  
+    return result;
 };
 
 xModelHandle.prototype.restoreModelState = function (state) {
     state.forEach(function (s) {
-        var id = s[0];
-        var style = s[1] >> 8;
-        var state = s[1] - (style << 8);
+        const id = s[0];
+        const style = s[1] >> 8;
+        const state = s[1] - (style << 8);
+        const map = this.getProductMap(id);
 
-        var map = this.getProductMap(id);
         if (map != null) {
             map.spans.forEach(function (span) {
                 //set state or style
-                for (var k = span[0]; k < span[1]; k++) {
+                for (let k = span[0]; k < span[1]; k++) {
                     this._model.states[k * 2] = state;
                     this._model.states[k * 2 + 1] = style;
                 }
             }, this);
         }
-
     }, this);
 
     //buffer data to GPU

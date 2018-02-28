@@ -1,6 +1,5 @@
-
 /**
-* This is constructor of the xBIM Viewer. It gets HTMLCanvasElement or string ID as an argument. Viewer will than be initialized 
+* This is constructor of the xBIM Viewer. It gets HTMLCanvasElement or string ID as an argument. Viewer will than be initialized
 * in the context of specified canvas. Any other argument will throw exception.
 * @name xViewer
 * @constructor
@@ -12,14 +11,14 @@
 * @param {string | HTMLCanvasElement} canvas - string ID of the canvas or HTML canvas element.
 */
 function xViewer(canvas) {
-    if (typeof (canvas) == 'undefined') {
+    if (typeof (canvas) === 'undefined') {
         throw 'Canvas has to be defined';
     }
     this._canvas = null;
-    if (typeof(canvas.nodeName) != 'undefined' && canvas.nodeName == 'CANVAS') { 
+    if (typeof(canvas.nodeName) !== 'undefined' && canvas.nodeName === 'CANVAS') {
         this._canvas = canvas;
     }
-    if (typeof (canvas) == 'string') {
+    if (typeof (canvas) === 'string') {
         this._canvas = document.getElementById(canvas);
     }
     if (this._canvas == null) {
@@ -32,10 +31,10 @@ function xViewer(canvas) {
     */
     /**
     * This is only a structure. Don't call the constructor.
-    * @classdesc This is a structure that holds settings of perspective camera. If you want 
+    * @classdesc This is a structure that holds settings of perspective camera. If you want
     * to switch viewer to use perspective camera set {@link xViewer#camera camera} to 'perspective'.
-    * You can modify this but it is not necessary because sensible values are 
-    * defined when geometry model is loaded with {@link xViewer#load load()} method. If you want to 
+    * You can modify this but it is not necessary because sensible values are
+    * defined when geometry model is loaded with {@link xViewer#load load()} method. If you want to
     * change these values you have to do it after geometry is loaded.
     * @class
     * @name PerspectiveCamera
@@ -50,7 +49,7 @@ function xViewer(canvas) {
     };
 
     /**
-    * This is a structure that holds settings of orthogonal camera. You can modify this but it is not necessary because sensible values are 
+    * This is a structure that holds settings of orthogonal camera. You can modify this but it is not necessary because sensible values are
     * defined when geometry model is loaded with {@link xViewer#load load()} method. If you want to change these values you have to do it after geometry is loaded.
     * @member {OrthogonalCamera} xViewer#orthogonalCamera
     */
@@ -86,16 +85,21 @@ function xViewer(canvas) {
     * @member {Number[]} xViewer#background
     */
     this.background = [230, 230, 230, 255];
+
     /**
     * Array of four integers between 0 and 255 representing RGBA colour components. This defines colour for highlighted elements. You can change this value at any time with instant effect.
     * @member {Number[]} xViewer#highlightingColour
     */
     this.highlightingColour = [255, 173, 33, 255];
+
+    this.redColour = [255, 0, 0, 255];
+
     /**
     * Array of four floats. It represents Light A's position <strong>XYZ</strong> and intensity <strong>I</strong> as [X, Y, Z, I]. Intensity should be in range 0.0 - 1.0.
     * @member {Number[]} xViewer#lightA
     */
     this.lightA = [0, 1000000, 200000, 0.8];
+
     /**
     * Array of four floats. It represents Light B's position <strong>XYZ</strong> and intensity <strong>I</strong> as [X, Y, Z, I]. Intensity should be in range 0.0 - 1.0.
     * @member {Number[]} xViewer#lightB
@@ -103,7 +107,8 @@ function xViewer(canvas) {
     this.lightB = [0, -500000, 50000, 0.2];
 
     /**
-    * Switch between different navigation modes for left mouse button. Allowed values: <strong> 'pan', 'zoom', 'orbit' (or 'fixed-orbit') , 'free-orbit' and 'none'</strong>. Default value is <strong>'orbit'</strong>;
+    * Switch between different navigation modes for left mouse button. Allowed values: <strong> 'pan', 'zoom', 'orbit' (or 'fixed-orbit') , 'free-orbit' and 'none'</strong>.
+    * Default value is ]\<strong>'orbit'</strong>;
     * @member {String} xViewer#navigationMode
     */
     this.navigationMode = 'orbit';
@@ -116,7 +121,7 @@ function xViewer(canvas) {
     */
     this.renderingMode = 'normal';
 
-    /** 
+    /**
     * Clipping plane [a, b, c, d] defined as normal equation of the plane ax + by + cz + d = 0. [0,0,0,0] is for no clipping plane.
     * @member {Number[]} xViewer#clippingPlane
     */
@@ -124,9 +129,8 @@ function xViewer(canvas) {
 
     this._lastClippingPoint = [0, 0, 0];
 
-
     //*************************** Do all the set up of WebGL **************************
-    var gl = WebGLUtils.setupWebGL(this._canvas);
+    const gl = WebGLUtils.setupWebGL(this._canvas);
 
     //do not even initialize this object if WebGL is not supported
     if (!gl) {
@@ -137,10 +141,10 @@ function xViewer(canvas) {
 
     //detect floating point texture support
     this._fpt = (
-	gl.getExtension('OES_texture_float') ||
-	gl.getExtension('MOZ_OES_texture_float') ||
-	gl.getExtension('WEBKIT_OES_texture_float')
-	);
+    gl.getExtension('OES_texture_float') ||
+    gl.getExtension('MOZ_OES_texture_float') ||
+    gl.getExtension('WEBKIT_OES_texture_float')
+  );
 
 
     //set up DEPTH_TEST and BLEND so that transparent objects look right
@@ -189,14 +193,16 @@ function xViewer(canvas) {
     this._clippingPlaneUniformPointer = null;
     this._meterUniformPointer = null;
     this._renderingModeUniformPointer = null;
+
     this._highlightingColourUniformPointer = null;
+    this._redColourUniformPointer = null;
 
     //transformation matrices
     this._mvMatrix = mat4.create(); 	//world matrix
     this._pMatrix = mat4.create(); 		//camera matrix (this can be either perspective or orthogonal camera)
 
     //Navigation settings - coordinates in the WCS of the origin used for orbiting and panning
-    this._origin = [0, 0, 0]
+    this._origin = [0, 0, 0];
     //Default distance for default views (top, bottom, left, right, front, back)
     this._distance = 0;
     //shader program used for rendering
@@ -219,7 +225,7 @@ function xViewer(canvas) {
     this._initAttributesAndUniforms();
     //initialize mouse events to capture user interaction
     this._initMouseEvents();
-};
+}
 
 /**
 * This is a static function which should always be called before xViewer is instantiated.
@@ -231,29 +237,29 @@ function xViewer(canvas) {
 */
 xViewer.check = function () {
     /**
-    * This is a structure reporting errors and warnings about prerequisites of {@link xViewer xViewer}. It is result of {@link xViewer.checkPrerequisities checkPrerequisities()} static method.
+    * This is a structure reporting errors and warnings about prerequisites of {@link xViewer xViewer}
     *
     * @name Prerequisites
     * @class
     */
-    var result = {
+    const result = {
         /**
         * If this array contains any warnings xViewer will work but it might be slow or may not support full functionality.
         * @member {string[]}  Prerequisites#warnings
         */
         warnings: [],
         /**
-        * If this array contains any errors xViewer won't work at all or won't work as expected. 
-        * You can use messages in this array to report problems to user. However, user won't probably 
-        * be able to do to much with it except trying to use different browser. IE10- are not supported for example. 
+        * If this array contains any errors xViewer won't work at all or won't work as expected.
+        * You can use messages in this array to report problems to user. However, user won't probably
+        * be able to do to much with it except trying to use different browser. IE10- are not supported for example.
         * The latest version of IE should be all right.
         * @member {string[]}  Prerequisites#errors
         */
         errors: [],
         /**
-        * If false xViewer won't work at all or won't work as expected. 
-        * You can use messages in {@link Prerequisites#errors errors array} to report problems to user. However, user won't probably 
-        * be able to do to much with it except trying to use different browser. IE10- are not supported for example. 
+        * If false xViewer won't work at all or won't work as expected.
+        * You can use messages in {@link Prerequisites#errors errors array} to report problems to user. However, user won't probably
+        * be able to do to much with it except trying to use different browser. IE10- are not supported for example.
         * The latest version of IE should be all right.
         * @member {string[]}  Prerequisites#noErrors
         */
@@ -266,45 +272,48 @@ xViewer.check = function () {
     };
 
     //check WebGL support
-    var canvas = document.createElement('canvas');
-    if (!canvas) result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
-    else {
-        var gl = WebGLUtils.setupWebGL(canvas);
-        if (gl == null) result.errors.push("Browser doesn't support WebGL. This is critical.");
+    const canvas = document.createElement('canvas');
+    if (!canvas) {
+      result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
+    } else {
+        const gl = WebGLUtils.setupWebGL(canvas);
+        if (gl === null) result.errors.push("Browser doesn't support WebGL. This is critical.");
         else {
             //check floating point extension availability
-            var fpt = (
-	            gl.getExtension('OES_texture_float') ||
-	            gl.getExtension('MOZ_OES_texture_float') ||
-	            gl.getExtension('WEBKIT_OES_texture_float')
-	            );
+            const fpt = (
+              gl.getExtension('OES_texture_float') ||
+              gl.getExtension('MOZ_OES_texture_float') ||
+              gl.getExtension('WEBKIT_OES_texture_float')
+            );
             if (!fpt) result.warnings.push('Floating point texture extension is not supported. Performance of the viewer will be very bad. But it should work.');
 
             //check number of supported vertex shader textures. Minimum is 5 but standard requires 0.
-            var vertTextUnits = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
+            const vertTextUnits = gl.getParameter(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS);
             if (vertTextUnits < 4) result.errors.push("Browser supports only " + vertTextUnits + " vertex texture image units but minimal requirement for the viewer is 4.");
         }
     }
 
     //check FileReader and Blob support
     if (!window.File || !window.FileReader ||  !window.Blob)  result.errors.push("Browser doesn't support 'File', 'FileReader' or 'Blob' objects.");
-    
 
     //check for typed arrays
     if (!window.Int32Array || !window.Float32Array) result.errors.push("Browser doesn't support TypedArrays. These are crucial for binary parsing and for comunication with GPU.");
-    
+
     //check SVG support
-    if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
+    if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) {
+      result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
+    }
 
     //set boolean members for convenience
-    if (result.errors.length == 0) result.noErrors = true;
-    if (result.warnings.length == 0) result.noWarnings = true;
+    if (result.errors.length === 0) result.noErrors = true;
+    if (result.warnings.length === 0) result.noWarnings = true;
+
     return result;
 };
 
 /**
 * Adds plugin to the viewer. Plugins can implement certain methods which get called in certain moments in time like
-* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others. 
+* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others.
 * @function xViewer#addPlugin
 * @param {object} plugin - plug-in object
 */
@@ -317,12 +326,12 @@ xViewer.prototype.addPlugin = function (plugin) {
 
 /**
 * Removes plugin from the viewer. Plugins can implement certain methods which get called in certain moments in time like
-* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others. 
+* before draw, after draw etc. This makes it possible to implement functionality tightly integrated into xViewer like navigation cube or others.
 * @function xViewer#removePlugin
 * @param {object} plugin - plug-in object
 */
 xViewer.prototype.removePlugin = function (plugin) {
-    var index = this._plugins.indexOf(plugin, 0);
+    const index = this._plugins.indexOf(plugin, 0);
     if (index < 0) return;
     this._plugins.splice(index, 1);
 };
@@ -334,12 +343,12 @@ xViewer.prototype.removePlugin = function (plugin) {
 * @param {Number[]} colour - Array of four numbers in range 0 - 255 representing RGBA colour. If there are less or more numbers exception is thrown.
 */
 xViewer.prototype.defineStyle = function (index, colour) {
-    if (typeof (index) == 'undefined' || (index < 0 && index > 224)) throw 'Style index has to be defined as a number 0-224';
-    if (typeof (colour) == 'undefined' || colour.length == 'undefined' || colour.length != 4) throw 'Colour must be defined as an array of 4 bytes';
+    if (typeof (index) === 'undefined' || (index < 0 && index > 224)) throw 'Style index has to be defined as a number 0-224';
+    if (typeof (colour) === 'undefined' || colour.length === 'undefined' || colour.length !== 4) throw 'Colour must be defined as an array of 4 bytes';
     this._stylingChanged = true;
 
     //set style to style texture via model handle
-    var colData = new Uint8Array(colour);
+    const colData = new Uint8Array(colour);
     this._stateStyles.set(colData, index * 4);
 
     //if there are some handles already set this style in there
@@ -349,10 +358,8 @@ xViewer.prototype.defineStyle = function (index, colour) {
     }, this);
 };
 
-    
-
 /**
-* You can use this function to change state of products in the model. State has to have one of values from {@link xState xState} enumeration. 
+* You can use this function to change state of products in the model. State has to have one of values from {@link xState xState} enumeration.
 * Target is either enumeration from {@link xProductType xProductType} or array of product IDs. If you specify type it will effect all elements of the type.
 *
 * @function xViewer#setState
@@ -360,7 +367,7 @@ xViewer.prototype.defineStyle = function (index, colour) {
 * @param {Number[] | Number} target - Target of the change. It can either be array of product IDs or product type from {@link xProductType xProductType}.
 */
 xViewer.prototype.setState = function (state, target) {
-    if (typeof (state) == 'undefined' || !(state >= 225 && state <= 255)) throw 'State has to be defined as 225 - 255. Use xState enum.';
+    if (typeof (state) === 'undefined' || !(state >= 225 && state <= 255)) throw 'State has to be defined as 225 - 255. Use xState enum.';
     this._handles.forEach(function (handle) {
         handle.setState(state, target);
     }, this);
@@ -368,37 +375,39 @@ xViewer.prototype.setState = function (state, target) {
 };
 
 /**
-* Use this function to get state of the products in the model. You can compare result of this function 
+* Use this function to get state of the products in the model. You can compare result of this function
 * with one of values from {@link xState xState} enumeration. 0xFF is the default value.
 *
 * @function xViewer#getState
 * @param {Number} id - Id of the product. You would typically get the id from {@link xViewer#event:pick pick event} or similar event.
 */
 xViewer.prototype.getState = function (id) {
-    var state = null;
+    let state = null;
     this._handles.forEach(function (handle) {
         state = handle.getState(id);
         if (state !== null) {
-            return;
+            return null;
         }
     }, this);
+
     return state;
 };
 
 /**
-* Use this function to reset state of all products to 'UNDEFINED' which means visible and not highlighted. 
+* Use this function to reset state of all products to 'UNDEFINED' which means visible and not highlighted.
 * You can use optional hideSpaces parameter if you also want to show spaces. They will be hidden by default.
-* 
+*
 * @function xViewer#resetStates
-* @param {Bool} [hideSpaces = true] - Default state is UNDEFINED which would also show spaces. That is often not 
+* @param [hideSpaces = true] - Default state is UNDEFINED which would also show spaces. That is often not
 * desired so it can be excluded with this parameter.
 */
 xViewer.prototype.resetStates = function (hideSpaces) {
     this._handles.forEach(function (handle) {
         handle.resetStates();
     }, this);
+
     //hide spaces
-    hideSpaces = typeof (hideSpaces) != 'undefined' ? hideSpaces : true;
+    hideSpaces = typeof (hideSpaces) !== 'undefined' ? hideSpaces : true;
     if (hideSpaces){
         this._handles.forEach(function (handle) {
             handle.setState(xState.HIDDEN, xProductType.IFCSPACE);
@@ -409,12 +418,12 @@ xViewer.prototype.resetStates = function (hideSpaces) {
 
 /**
  * Gets complete model state and style. Resulting object can be used to restore the state later on.
- * 
+ *
  * @param {Number} id - Model ID which you can get from {@link xViewer#event:loaded loaded} event.
  * @returns {Array} - Array representing model state in compact form suitable for serialization
  */
 xViewer.prototype.getModelState = function (id) {
-    var handle = this._handles[id];
+    const handle = this._handles[id];
     if (typeof (handle) === "undefined") {
         throw "Model doesn't exist";
     }
@@ -428,7 +437,7 @@ xViewer.prototype.getModelState = function (id) {
  * @param {Array} state - State of the model as obtained from {@link xViewer#getModelState getModelState()} function
  */
 xViewer.prototype.restoreModelState = function (id, state) {
-    var handle = this._handles[id];
+    const handle = this._handles[id];
     if (typeof (handle) === "undefined") {
         throw "Model doesn't exist";
     }
@@ -438,33 +447,37 @@ xViewer.prototype.restoreModelState = function (id, state) {
 };
 
 /**
-* Use this method for restyling of the model. This doesn't change the default appearance of the products so you can think about it as an overlay. You can 
-* remove the overlay if you set the style to {@link xState#UNSTYLED xState.UNSTYLED} value. You can combine restyling and hiding in this way. 
-* Use {@link xViewer#defineStyle defineStyle()} to define styling first. 
-* 
+* Use this method for restyling of the model. This doesn't change the default appearance of the products so you can think about it as an overlay. You can
+* remove the overlay if you set the style to {@link xState#UNSTYLED xState.UNSTYLED} value. You can combine restyling and hiding in this way.
+* Use {@link xViewer#defineStyle defineStyle()} to define styling first.
+*
 * @function xViewer#setStyle
 * @param style - style defined in {@link xViewer#defineStyle defineStyle()} method
 * @param {Number[] | Number} target - Target of the change. It can either be array of product IDs or product type from {@link xProductType xProductType}.
 */
 xViewer.prototype.setStyle = function (style, target) {
-    if (typeof (style) == 'undefined' || !(style >= 0 && style <= 225)) throw 'Style has to be defined as 0 - 225 where 225 is for default style.';
-    var c = [
+    if (typeof (style) === 'undefined' || !(style >= 0 && style <= 225)) throw 'Style has to be defined as 0 - 225 where 225 is for default style.';
+
+    const c = [
         this._stateStyles[style * 4],
         this._stateStyles[style * 4 + 1],
         this._stateStyles[style * 4 + 2],
         this._stateStyles[style * 4 + 3]
     ];
-    if (c[0] == 0 && c[1] == 0 && c[2] == 0 && c[3] == 0 && console && console.warn)
+
+    if (c[0] === 0 && c[1] === 0 && c[2] === 0 && c[3] === 0 && console && console.warn) {
         console.warn('You have used undefined colour for restyling. Elements with this style will have transparent black colour and hence will be invisible.');
+    }
 
     this._handles.forEach(function (handle) {
         handle.setState(style, target);
     }, this);
+
     this._stylingChanged = true;
 };
 
 /**
-* Use this function to get overriding colour style of the products in the model. The number you get is the index of 
+* Use this function to get overriding colour style of the products in the model. The number you get is the index of
 * your custom colour which you have defined in {@link xViewer#defineStyle defineStyle()} function. 0xFF is the default value.
 *
 * @function xViewer#getStyle
@@ -472,7 +485,7 @@ xViewer.prototype.setStyle = function (style, target) {
 */
 xViewer.prototype.getStyle = function (id) {
     this._handles.forEach(function (handle) {
-        var style = handle.getStyle(id);
+        const style = handle.getStyle(id);
         if (style !== null) {
             return style;
         }
@@ -483,7 +496,7 @@ xViewer.prototype.getStyle = function (id) {
 /**
 * Use this function to reset appearance of all products to their default styles.
 *
-* @function xViewer#resetStyles 
+* @function xViewer#resetStyles
 */
 xViewer.prototype.resetStyles = function () {
     this._handles.forEach(function (handle) {
@@ -493,15 +506,15 @@ xViewer.prototype.resetStyles = function () {
 };
 
 /**
-* 
+*
 * @function xViewer#getProductType
 * @return {Number} Product type ID. This is either null if no type is identified or one of {@link xProductType type ids}.
-* @param {Number} prodID - Product ID. You can get this value either from semantic structure of the model or by listening to {@link xViewer#event:pick pick} event.
+* @param {Number} prodId - Product ID. You can get this value either from semantic structure of the model or by listening to {@link xViewer#event:pick pick} event.
 */
 xViewer.prototype.getProductType = function (prodId) {
-    var pType = null;
+    let pType = null;
     this._handles.forEach(function (handle) {
-        var map = handle.getProductMap(prodId);
+        const map = handle.getProductMap(prodId);
         if (map) pType = map.type;
     }, this);
     return pType;
@@ -509,14 +522,14 @@ xViewer.prototype.getProductType = function (prodId) {
 
 /**
 * Use this method to set position of camera. Use it after {@link xViewer#setCameraTarget setCameraTarget()} to get desired result.
-* 
+*
 * @function xViewer#setCameraPosition
 * @param {Number[]} coordinates - 3D coordinates of the camera in WCS
 */
 xViewer.prototype.setCameraPosition = function (coordinates) {
-    if (typeof (coordinates) == 'undefined') throw 'Parameter coordinates must be defined';
+    if (typeof (coordinates) === 'undefined') throw 'Parameter coordinates must be defined';
     mat4.lookAt(this._mvMatrix, coordinates, this._origin, [0,0,1]);
-}
+};
 
 /**
 * This method sets navigation origin to the centroid of specified product's bounding box or to the centre of model if no product ID is specified.
@@ -524,23 +537,24 @@ xViewer.prototype.setCameraPosition = function (coordinates) {
 * if you call functions like {@link xViewer.show show()} or {@link xViewer#zoomTo zoomTo()}.
 * @function xViewer#setCameraTarget
 * @param {Number} prodId [optional] Product ID. You can get ID either from semantic structure of the model or from {@link xViewer#event:pick pick event}.
-* @return {Bool} True if the target exists and is set, False otherwise
+* @return True if the target exists and is set, False otherwise
 */
 xViewer.prototype.setCameraTarget = function (prodId) {
-    var viewer = this;
+    const viewer = this;
+
     //helper function for setting of the distance based on camera field of view and size of the product's bounding box
-    var setDistance = function (bBox) {
-        var size = Math.max(bBox[3], bBox[4], bBox[5]);
-        var ratio = Math.max(viewer._width, viewer._height) / Math.min(viewer._width, viewer._height);
-        viewer._distance = size / Math.tan(viewer.perspectiveCamera.fov * Math.PI / 180.0) * ratio * 1.0;
-    }
+    const setDistance = function (bBox) {
+        const size = Math.max(bBox[3], bBox[4], bBox[5]);
+        const ratio = Math.max(viewer._width, viewer._height) / Math.min(viewer._width, viewer._height);
+        viewer._distance = size / Math.tan(viewer.perspectiveCamera.fov * Math.PI / 180.0) * ratio;
+    };
 
     //set navigation origin and default distance to the product BBox
-    if (typeof (prodId) != 'undefined' && prodId != null) {
+    if (typeof (prodId) !== 'undefined' && prodId != null) {
         //get product BBox and set it's centre as a navigation origin
-        var bbox = null;
+        let bbox = null;
         this._handles.every(function (handle) {
-            var map = handle.getProductMap(prodId);
+            const map = handle.getProductMap(prodId);
             if (map) {
                 bbox = map.bBox;
                 return false;
@@ -551,18 +565,16 @@ xViewer.prototype.setCameraTarget = function (prodId) {
             this._origin = [bbox[0] + bbox[3] / 2.0, bbox[1] + bbox[4] / 2.0, bbox[2] + bbox[5] / 2.0];
             setDistance(bbox);
             return true;
-        }
-        else
+        } else {
             return false;
-    }
-        //set navigation origin and default distance to the most populated region from the first model
-    else {
+        }
+    } else {
         //get region extent and set it's centre as a navigation origin
-        var handle = this._handles[0];
+        const handle = this._handles[0];
         if (handle) {
-            var region = handle.region
+            const region = handle.region;
             if (region) {
-                this._origin = [region.centre[0], region.centre[1], region.centre[2]]
+                this._origin = [region.centre[0], region.centre[1], region.centre[2]];
                 setDistance(region.bbox);
             }
         }
@@ -585,60 +597,85 @@ xViewer.prototype.set = function (settings) {
 * This method is used to load model data into viewer. Model has to be either URL to wexBIM file or Blob or File representing wexBIM file binary data. Any other type of argument will throw an exception.
 * Region extend is determined based on the region of the model
 * Default view if 'front'. If you want to define different view you have to set it up in handler of {@link xViewer#event:loaded loaded} event. <br>
-* You can load more than one model if they occupy the same space, use the same scale and have unique product IDs. Duplicated IDs won't affect 
+* You can load more than one model if they occupy the same space, use the same scale and have unique product IDs. Duplicated IDs won't affect
 * visualization itself but would cause unexpected user interaction (picking, zooming, ...)
 * @function xViewer#load
 * @param {String | Blob | File} model - Model has to be either URL to wexBIM file or Blob or File representing wexBIM file binary data.
-* @param {Any} tag [optional] - Tag to be used to identify the model in {@link xViewer#event:loaded loaded} event.
+* @param tag - tag to be used to identify the model
+* @param progressCallback
+* @param appendOptions
 * @fires xViewer#loaded
 */
-xViewer.prototype.load = function (model, tag) {
-    if (typeof (model) == 'undefined') throw 'You have to specify model to load.';
-    if (typeof(model) != 'string' && !(model instanceof Blob) && !(model instanceof File))
+xViewer.prototype.load = function (model, tag, progressCallback, appendOptions) {
+    if (appendOptions === undefined) appendOptions = null;
+    if (typeof (model) === 'undefined') throw 'You have to specify model to load.';
+    if (typeof(model) !== 'string' && !(model instanceof Blob) && !(model instanceof File))
         throw 'Model has to be specified either as a URL to wexBIM file or Blob object representing the wexBIM file.';
-    var viewer = this;
 
-    var geometry = new xModelGeometry();
+    const viewer = this;
+
+    if (progressCallback) {
+        progressCallback('modelLoaderStage.rendering');
+    }
+
+    // noinspection JSPotentiallyInvalidConstructorUsage
+    const geometry = new xModelGeometry();
+    geometry.id = xModelGeometry._instancesNum;
     geometry.onloaded = function () {
-        viewer._addHandle(geometry, tag);
+        viewer._addHandle(geometry, tag, appendOptions);
     };
     geometry.onerror = function (msg) {
         viewer._error(msg);
-    }
+    };
     geometry.load(model);
+
+    if (appendOptions) {
+        xModelGeometry._appendedModels[geometry.id] = {
+            options: appendOptions,
+            productIdsMap: []
+        };
+    }
+
+    xModelGeometry._instancesNum++;
 };
 
-//this is a private function used to add loaded geometry as a new handle and to set up camera and 
-//default view if this is the first geometry loaded
-xViewer.prototype._addHandle = function (geometry, tag) {
-    var viewer = this;
-    var gl = this._gl;
+xViewer.prototype.append = function (model, tag, options) {
+    this.load(model, tag, undefined, options);
+};
 
-    var handle = new xModelHandle(viewer._gl, geometry, viewer._fpt != null);
+//this is a private function used to add loaded geometry as a new handle and to set up camera and
+//default view if this is the first geometry loaded
+xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
+    const viewer = this;
+    const gl = this._gl;
+
+    // noinspection JSPotentiallyInvalidConstructorUsage
+    const handle = new xModelHandle(viewer._gl, geometry, viewer._fpt != null);
     viewer._handles.push(handle);
 
     handle.stateStyle = viewer._stateStyles;
     handle.feedGPU();
 
     //get one meter size from model and set it to shader
-    var meter = handle._model.meter;
+    const meter = handle._model.meter;
     gl.uniform1f(viewer._meterUniformPointer, meter);
 
     //only set camera parameters and the view if this is the first model
-    if (viewer._handles.length === 1) {
+    if (viewer._handles.length === 1 && !appendOptions) {
         //set centre and default distance based on the most populated region in the model
         viewer.setCameraTarget();
 
         //set perspective camera near and far based on 1 meter dimension and size of the model
-        var region = handle.region;
-        var maxSize = Math.max(region.bbox[3], region.bbox[4], region.bbox[5]);
+        const region = handle.region;
+        const maxSize = Math.max(region.bbox[3], region.bbox[4], region.bbox[5]);
         viewer.perspectiveCamera.far = maxSize * 50;
         viewer.perspectiveCamera.near = meter / 10.0;
 
         //set orthogonalCamera boundaries so that it makes a sense
         viewer.orthogonalCamera.far = viewer.perspectiveCamera.far;
         viewer.orthogonalCamera.near = viewer.perspectiveCamera.near;
-        var ratio = 1.8;
+
+        const ratio = 1.8;
         viewer.orthogonalCamera.top = maxSize / ratio;
         viewer.orthogonalCamera.bottom = maxSize / ratio * -1;
         viewer.orthogonalCamera.left = maxSize / ratio * -1 * viewer._width / viewer._height;
@@ -646,68 +683,90 @@ xViewer.prototype._addHandle = function (geometry, tag) {
 
         //set default view
         viewer.setCameraTarget();
-        var dist = Math.sqrt(viewer._distance * viewer._distance / 3.0);
+
+        const dist = Math.sqrt(viewer._distance * viewer._distance / 3.0);
         viewer.setCameraPosition([region.centre[0] + dist * -1.0, region.centre[1] + dist * -1.0, region.centre[2] + dist]);
     }
 
     /**
      * Occurs when geometry model is loaded into the viewer. This event returns object containing ID of the model.
      * This ID can later be used to unload or temporarily stop the model.
-     * 
+     *
      * @event xViewer#loaded
      * @type {object}
      * @param {Number} id - model ID
-     * @param {Any} tag - tag which was passed to 'xViewer.load()' function
-     * 
+     * @param tag - tag which was passed to 'xViewer.load()' function
     */
-    viewer._fire('loaded', { id: handle.id, tag: tag })
+    let eventName = 'loaded';
+    if (appendOptions) {
+        eventName = 'appended';
+
+        if (appendOptions.color !== undefined) {
+            if (appendOptions.color[3] === undefined) {
+                appendOptions.color[3] = 255;
+            }
+
+            const appendedModel = xModelGeometry._appendedModels[geometry.id];
+
+            if (appendedModel && appendedModel.productIdsMap) {
+                const styleIndex = geometry.id;
+                viewer.defineStyle(styleIndex, appendOptions.color);
+
+                for (let productId in appendedModel.productIdsMap) {
+                    viewer.setStyle(styleIndex, [appendedModel.productIdsMap[productId]]);
+                }
+            }
+        }
+    }
+
+    viewer._fire(eventName, { id: handle.id, tag: tag, geometry: geometry });
+
     viewer._geometryLoaded = true;
 };
 
 /**
  * Unloads model from the GPU. This action is not reversible.
- * 
+ *
  * @param {Number} modelId - ID of the model which you can get from {@link xViewer#event:loaded loaded} event.
  */
 xViewer.prototype.unload = function (modelId) {
-    var handle = this._handles.filter(function (h) { return h.id === modelId }).pop();
-    if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist or was unloaded already."
+    let handle = this._handles.filter(function (h) { return h.id === modelId }).pop();
+    if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist or was unloaded already.";
 
     //stop for start so it doesn't interfere with the rendering loop
     handle.stopped = true;
 
     //remove from the array
-    var index = this._handles.indexOf(handle);
+    const index = this._handles.indexOf(handle);
     this._handles.splice(index, 1);
     this._numberOfActiveModels = this._handles.length;
 
     //unload and delete
     handle.unload();
-    delete handle;
+    handle = null;
 };
 
 
 //this function should be only called once during initialization
 //or when shader set-up changes
 xViewer.prototype._initShaders = function () {
-        
-    var gl = this._gl;
-    var viewer = this;
-    var compile = function (shader, code) {
+    const gl = this._gl;
+    const viewer = this;
+    const compile = function (shader, code) {
         gl.shaderSource(shader, code);
         gl.compileShader(shader);
         if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
             viewer._error(gl.getShaderInfoLog(shader));
             return null;
         }
-    }
+    };
 
     //fragment shader
-    var fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
+    const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER);
     compile(fragmentShader, xShaders.fragment_shader);
-    
+
     //vertex shader (the more complicated one)
-    var vertexShader = gl.createShader(gl.VERTEX_SHADER);
+    const vertexShader = gl.createShader(gl.VERTEX_SHADER);
     if (this._fpt != null) compile(vertexShader, xShaders.vertex_shader);
     else compile(vertexShader, xShaders.vertex_shader_noFPT);
 
@@ -725,7 +784,7 @@ xViewer.prototype._initShaders = function () {
 };
 
 xViewer.prototype._initAttributesAndUniforms = function () {
-    var gl = this._gl;
+    const gl = this._gl;
 
     //create pointers to uniform variables for transformations
     this._pMatrixUniformPointer = gl.getUniformLocation(this._shaderProgram, "uPMatrix");
@@ -764,28 +823,29 @@ xViewer.prototype._initAttributesAndUniforms = function () {
 };
 
 xViewer.prototype._initMouseEvents = function () {
-    var viewer = this;
+    const viewer = this;
 
-    var mouseDown = false;
-    var lastMouseX = null;
-    var lastMouseY = null;
-    var startX = null;
-    var startY = null;
-    var button = 'L';
-    var id = -1;
+    let mouseDown = false;
+    let lastMouseX = null;
+    let lastMouseY = null;
+    let startX = null;
+    let startY = null;
+    let button = 'L';
+    let id = -1;
 
     //set initial conditions so that different gestures can be identified
     function handleMouseDown(event) {
         mouseDown = true;
+
         lastMouseX = event.clientX;
         lastMouseY = event.clientY;
         startX = event.clientX;
         startY = event.clientY;
 
         //get coordinates within canvas (with the right orientation)
-        var r = viewer._canvas.getBoundingClientRect();
-        var viewX = startX - r.left;
-        var viewY = viewer._height - (startY - r.top);
+        const r = viewer._canvas.getBoundingClientRect();
+        const viewX = startX - r.left;
+        const viewY = viewer._height - (startY - r.top);
 
         //this is for picking
         id = viewer._getID(viewX, viewY);
@@ -798,7 +858,6 @@ xViewer.prototype._initMouseEvents = function () {
         * @param {Number} id - product ID of the element or null if there wasn't any product under mouse
         */
         viewer._fire('mouseDown', {id: id});
-
 
         //keep information about the mouse button
         switch (event.button) {
@@ -825,16 +884,27 @@ xViewer.prototype._initMouseEvents = function () {
     function handleMouseUp(event) {
         mouseDown = false;
 
-        var endX = event.clientX;
-        var endY = event.clientY;
+        const endX = event.clientX;
+        const endY = event.clientY;
 
-        var deltaX = Math.abs(endX - startX);
-        var deltaY = Math.abs(endY - startY);
+        const deltaX = Math.abs(endX - startX);
+        const deltaY = Math.abs(endY - startY);
 
         //if it was a longer movement do not perform picking
-        if (deltaX < 3 && deltaY < 3 && button == 'left') {
+        if (deltaX < 3 && deltaY < 3 && button === 'left') {
+            for (let modelId in xModelGeometry._appendedModels) {
+                const appendedModel = xModelGeometry._appendedModels[modelId];
 
-            var handled = false;
+                if (appendedModel.productIdsMap.indexOf(id) !== -1) {
+                    if (appendedModel.options.onClick) {
+                      appendedModel.options.onClick();
+                    }
+
+                    return;
+                }
+            }
+
+            let handled = false;
             viewer._plugins.forEach(function (plugin) {
                 if (!plugin.onBeforePick) {
                     return;
@@ -860,20 +930,20 @@ xViewer.prototype._initMouseEvents = function () {
             return;
         }
 
-        if (viewer.navigationMode == 'none') {
+        if (viewer.navigationMode === 'none') {
             return;
         }
 
-        var newX = event.clientX;
-        var newY = event.clientY;
+        const newX = event.clientX;
+        const newY = event.clientY;
 
-        var deltaX = newX - lastMouseX;
-        var deltaY = newY - lastMouseY;
+        const deltaX = newX - lastMouseX;
+        const deltaY = newY - lastMouseY;
 
         lastMouseX = newX;
         lastMouseY = newY;
 
-        if (button == 'left') {
+        if (button === 'left') {
             switch (viewer.navigationMode) {
                 case 'free-orbit':
                     navigate('free-orbit', deltaX, deltaY);
@@ -891,33 +961,31 @@ xViewer.prototype._initMouseEvents = function () {
                 case 'zoom':
                     navigate('zoom', deltaX, deltaY);
                     break;
-
-                default:
-                    break;
-
             }
         }
-        if (button == 'middle') {
+
+        if (button === 'middle') {
             navigate('pan', deltaX, deltaY);
         }
-
     }
 
     function handleMouseScroll(event) {
-        if (viewer.navigationMode == 'none') {
+        if (viewer.navigationMode === 'none') {
             return;
         }
+
         if (event.stopPropagation) {
             event.stopPropagation();
         }
         if (event.preventDefault) {
             event.preventDefault();
         }
-        function sign(x) {
-            x = +x // convert to a number
-            if (x === 0 || isNaN(x))
-                return x
-            return x > 0 ? 1 : -1
+
+        function sign(n) {
+            n = +n; // convert to a number
+            if (n === 0 || isNaN(n))
+                return n;
+            return n > 0 ? 1 : -1
         }
 
         //deltaX and deltaY have very different values in different web browsers so fixed value is used for constant functionality.
@@ -925,22 +993,23 @@ xViewer.prototype._initMouseEvents = function () {
     }
 
     function navigate(type, deltaX, deltaY) {
-        if(!viewer._handles || !viewer._handles[0]) return;
-        //translation in WCS is position from [0, 0, 0]
-        var origin = viewer._origin;
-        var camera = viewer.getCameraPosition();
+        if (!viewer._handles || !viewer._handles[0]) return;
 
-        //get origin coordinates in view space
-        var mvOrigin = vec3.transformMat4(vec3.create(), origin, viewer._mvMatrix)
+        // translation in WCS is position from [0, 0, 0]
+        const origin = viewer._origin;
+        const camera = viewer.getCameraPosition();
 
-        //movement factor needs to be dependant on the distance but one meter is a minimum so that movement wouldn't stop when camera is in 0 distance from navigation origin
-        var distanceVec = vec3.subtract(vec3.create(), origin, camera);
-        var distance = Math.max(vec3.length(distanceVec), viewer._handles[0]._model.meter);
+        // get origin coordinates in view space
+        const mvOrigin = vec3.transformMat4(vec3.create(), origin, viewer._mvMatrix);
 
-        //move to the navigation origin in view space
-        var transform = mat4.translate(mat4.create(), mat4.create(), mvOrigin)
+        // movement factor needs to be dependant on the distance but one meter is a minimum so that movement wouldn't stop when camera is in 0 distance from navigation origin
+        const distanceVec = vec3.subtract(vec3.create(), origin, camera);
+        const distance = Math.max(vec3.length(distanceVec), viewer._handles[0]._model.meter);
 
-        //function for conversion from degrees to radians
+        // move to the navigation origin in view space
+        let transform = mat4.translate(mat4.create(), mat4.create(), mvOrigin);
+
+        // function for conversion from degrees to radians
         function degToRad(deg) {
             return deg * Math.PI / 180.0;
         }
@@ -955,8 +1024,8 @@ xViewer.prototype._initMouseEvents = function () {
             case 'orbit':
                 mat4.rotate(transform, transform, degToRad(deltaY / 4), [1, 0, 0]);
 
-                //z rotation around model z axis
-                var mvZ = vec3.transformMat3(vec3.create(), [0, 0, 1], mat3.fromMat4(mat3.create(), viewer._mvMatrix));
+                // z rotation around model z axis
+                let mvZ = vec3.transformMat3(vec3.create(), [0, 0, 1], mat3.fromMat4(mat3.create(), viewer._mvMatrix));
                 mvZ = vec3.normalize(vec3.create(), mvZ);
                 transform = mat4.rotate(mat4.create(), transform, degToRad(deltaX / 4), mvZ);
 
@@ -968,25 +1037,33 @@ xViewer.prototype._initMouseEvents = function () {
                 break;
 
             case 'zoom':
-                mat4.translate(transform, transform, [0, 0, deltaX * distance / 20]);
-                mat4.translate(transform, transform, [0, 0, deltaY * distance / 20]);
+                const zoomRatio = deltaY * distance / 20;
+                const maxZoomRation = viewer.perspectiveCamera.far / 30;
+
+                // "deltaY < 0" because the limit applies only when zooming out
+                if (Math.abs(zoomRatio) >= maxZoomRation && deltaY < 0) {
+                  return;
+                }
+
+                mat4.translate(transform, transform, [0, 0, zoomRatio]);
                 break;
 
             default:
                 break;
         }
 
-        //reverse the translation in view space and leave only navigation changes
-        var translation = vec3.negate(vec3.create(), mvOrigin);
+        // reverse the translation in view space and leave only navigation changes
+        const translation = vec3.negate(vec3.create(), mvOrigin);
         transform = mat4.translate(mat4.create(), transform, translation);
 
-        //apply transformation in right order
+        // apply transformation in right order
         viewer._mvMatrix = mat4.multiply(mat4.create(), transform, viewer._mvMatrix);
     }
 
-    //watch resizing of canvas every 500ms
-    var elementHeight = viewer.height;
-    var elementWidth = viewer.width;
+    // watch resizing of canvas every 500ms
+    let elementHeight = viewer.height;
+    let elementWidth = viewer.width;
+
     setInterval(function () {
         if (viewer._canvas.offsetHeight !== elementHeight || viewer._canvas.offsetWidth !== elementWidth) {
             elementHeight = viewer._height = viewer._canvas.height = viewer._canvas.offsetHeight;
@@ -994,8 +1071,7 @@ xViewer.prototype._initMouseEvents = function () {
         }
     }, 500);
 
-
-    //attach callbacks
+    // attach callbacks
     this._canvas.addEventListener('mousedown', handleMouseDown, true);
     this._canvas.addEventListener('wheel', handleMouseScroll, true);
     window.addEventListener('mouseup', handleMouseUp, true);
@@ -1004,7 +1080,6 @@ xViewer.prototype._initMouseEvents = function () {
     this._canvas.addEventListener('mousemove', function() {
         viewer._userAction = true;
     }, true);
-
 
     /**
     * Occurs when user double clicks on model.
@@ -1023,7 +1098,7 @@ xViewer.prototype._initMouseEvents = function () {
 * @fires xViewer#frame
 */
 xViewer.prototype.draw = function () {
-    if (!this._geometryLoaded || this._handles.length == 0 || !(this._stylingChanged || this._isChanged())) {
+    if (!this._geometryLoaded || this._handles.length === 0 || !(this._stylingChanged || this._isChanged())) {
         if (!this._userAction) return;
     }
     this._userAction = false;
@@ -1039,9 +1114,9 @@ xViewer.prototype.draw = function () {
     //styles are up to date when new frame is drawn
     this._stylingChanged = false;
 
-    var gl = this._gl;
-    var width = this._width;
-    var height = this._height;
+    const gl = this._gl;
+    const width = this._width;
+    const height = this._height;
 
     gl.useProgram(this._shaderProgram);
     gl.viewport(0, 0, width, height);
@@ -1055,7 +1130,8 @@ xViewer.prototype.draw = function () {
             break;
 
         case 'orthogonal':
-            mat4.ortho(this._pMatrix, this.orthogonalCamera.left, this.orthogonalCamera.right, this.orthogonalCamera.bottom, this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
+            mat4.ortho(this._pMatrix, this.orthogonalCamera.left, this.orthogonalCamera.right, this.orthogonalCamera.bottom,
+                       this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
             break;
 
         default:
@@ -1075,14 +1151,13 @@ xViewer.prototype.draw = function () {
 
     //update highlighting colour
     gl.uniform4fv(this._highlightingColourUniformPointer, new Float32Array(
-        [this.highlightingColour[0]/255.0, 
-        this.highlightingColour[1]/255.0, 
-        this.highlightingColour[2]/255.0, 
+        [this.highlightingColour[0]/255.0,
+        this.highlightingColour[1]/255.0,
+        this.highlightingColour[2]/255.0,
         this.highlightingColour[3]/255.0]));
 
     //check for x-ray mode
-    if (this.renderingMode == 'x-ray')
-    {
+    if (this.renderingMode === 'x-ray') {
         //two passes - first one for non-transparent objects, second one for all the others
         gl.uniform1i(this._renderingModeUniformPointer, 2);
         gl.disable(gl.CULL_FACE);
@@ -1103,8 +1178,7 @@ xViewer.prototype.draw = function () {
             }
         }, this);
         gl.uniform1i(this._renderingModeUniformPointer, 0);
-    }
-    else {
+    } else {
         gl.uniform1i(this._renderingModeUniformPointer, 0);
         gl.disable(gl.CULL_FACE);
 
@@ -1124,7 +1198,7 @@ xViewer.prototype.draw = function () {
             }
         }, this);
     }
-    
+
     //call all after-draw plugins
     this._plugins.forEach(function (plugin) {
         if (!plugin.onAfterDraw) {
@@ -1136,20 +1210,22 @@ xViewer.prototype.draw = function () {
     /**
      * Occurs after every frame in animation. Don't do anything heavy weighted in here as it will happen about 60 times in a second all the time.
      *
-     * @event xViewer#frame 
+     * @event xViewer#frame
      * @type {object}
      */
     this._fire('frame', {});
 };
 
 xViewer.prototype._isChanged = function () {
-    var theSame = true;
+    let theSame = true;
+
     this._visualStateAttributes.forEach(function (visualStateAttribute) {
-        var state = JSON.stringify(this[visualStateAttribute]);
-        var lastState = this._lastStates[visualStateAttribute];
+        const state = JSON.stringify(this[visualStateAttribute]);
+        const lastState = this._lastStates[visualStateAttribute];
         this._lastStates[visualStateAttribute] = state;
         theSame = theSame && (state === lastState)
     }, this);
+
     return !theSame;
 };
 
@@ -1158,36 +1234,39 @@ xViewer.prototype._isChanged = function () {
 * @function xViewer#getCameraPosition
 */
 xViewer.prototype.getCameraPosition = function () {
-    var transform = mat4.create();
+    const transform = mat4.create();
     mat4.multiply(transform, this._pMatrix, this._mvMatrix);
-    var inv = mat4.create()
+
+    const inv = mat4.create();
     mat4.invert(inv, transform);
-    var eye = vec3.create();
+
+    const eye = vec3.create();
     vec3.transformMat4(eye, vec3.create(), inv);
 
     return eye;
-}
+};
 
 /**
 * Use this method to zoom to specified element. If you don't specify a product ID it will zoom to full extent.
 * @function xViewer#zoomTo
 * @param {Number} [id] Product ID
-* @return {Bool} True if target exists and zoom was successful, False otherwise
+* @return True if target exists and zoom was successful, False otherwise
 */
 xViewer.prototype.zoomTo = function (id) {
-    var found = this.setCameraTarget(id);
-    if (!found)  return false;
+    const found = this.setCameraTarget(id);
+    if (!found) return false;
 
-    var eye = this.getCameraPosition();
-    var dir = vec3.create();
+    const eye = this.getCameraPosition();
+    let dir = vec3.create();
     vec3.subtract(dir, eye, this._origin);
     dir = vec3.normalize(vec3.create(), dir);
 
-    var translation = vec3.create();
+    const translation = vec3.create();
     vec3.scale(translation, dir, this._distance);
     vec3.add(eye, translation, this._origin);
 
     mat4.lookAt(this._mvMatrix, eye, this._origin, [0, 0, 1]);
+
     return true;
 };
 
@@ -1195,15 +1274,16 @@ xViewer.prototype.zoomTo = function (id) {
 * Use this function to show default views.
 *
 * @function xViewer#show
-* @param {String} type - Type of view. Allowed values are <strong>'top', 'bottom', 'front', 'back', 'left', 'right'</strong>. 
+* @param {String} type - Type of view. Allowed values are <strong>'top', 'bottom', 'front', 'back', 'left', 'right'</strong>.
 * Directions of this views are defined by the coordinate system. Target and distance are defined by {@link xViewer#setCameraTarget setCameraTarget()} method to certain product ID
 * or to the model extent if {@link xViewer#setCameraTarget setCameraTarget()} is called with no arguments.
 */
 xViewer.prototype.show = function (type) {
-    var origin = this._origin;
-    var distance = this._distance;
-    var camera = [0, 0, 0];
-    var heading = [0, 0, 1];
+    const origin = this._origin;
+    const distance = this._distance;
+    const heading = [0, 0, 1];
+    let camera = [0, 0, 0];
+
     switch (type) {
         //top and bottom are different because these are singular points for look-at function if heading is [0,0,1]
         case 'top':
@@ -1212,9 +1292,9 @@ xViewer.prototype.show = function (type) {
             return;
         case 'bottom':
             //only move to origin and up and rotate 180 degrees around Y axis
-            var toOrigin = mat4.translate(mat4.create(), mat4.create(), [origin[0] * -1.0, origin[1] * +1.0, (origin[2] + distance) * -1]);
-            var rotationY = mat4.rotateY(mat4.create(), toOrigin, Math.PI);
-            var rotationZ = mat4.rotateZ(mat4.create(), rotationY, Math.PI);
+            const toOrigin = mat4.translate(mat4.create(), mat4.create(), [origin[0] * -1.0, origin[1] * +1.0, (origin[2] + distance) * -1]);
+            const rotationY = mat4.rotateY(mat4.create(), toOrigin, Math.PI);
+            const rotationZ = mat4.rotateZ(mat4.create(), rotationY, Math.PI);
             this._mvMatrix = rotationZ; // mat4.translate(mat4.create(), rotationZ, [0, 0, -1.0 * distance]);
             return;
 
@@ -1251,7 +1331,6 @@ xViewer.prototype._error = function (msg) {
 //this renders the colour coded model into the memory buffer
 //not to the canvas and use it to identify ID of the object from that
 xViewer.prototype._getID = function (x, y) {
-
     //call all before-drawId plugins
     this._plugins.forEach(function (plugin) {
         if (!plugin.onBeforeDrawId) {
@@ -1260,40 +1339,41 @@ xViewer.prototype._getID = function (x, y) {
         plugin.onBeforeDrawId();
     }, this);
 
-    //it is not necessary to render the image in full resolution so this factor is used for less resolution. 
-    var factor = 2;
-    var gl = this._gl;
-    var width = this._width / factor;
-    var height = this._height / factor;
+    //it is not necessary to render the image in full resolution so this factor is used for less resolution.
+    const factor = 2;
+    const gl = this._gl;
+    const width = this._width / factor;
+    const height = this._height / factor;
     x = x / factor;
     y = y / factor;
 
     //create framebuffer
-    var frameBuffer = gl.createFramebuffer();
+    const frameBuffer = gl.createFramebuffer();
     gl.bindFramebuffer(gl.FRAMEBUFFER, frameBuffer);
 
     // create renderbuffer
-    var renderBuffer = gl.createRenderbuffer();
+    const renderBuffer = gl.createRenderbuffer();
     gl.bindRenderbuffer(gl.RENDERBUFFER, renderBuffer);
+
     // allocate renderbuffer
     gl.renderbufferStorage(gl.RENDERBUFFER, gl.DEPTH_COMPONENT16, width, height);
 
-    var texture = gl.createTexture();
+    const texture = gl.createTexture();
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, texture);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
-    // Set the parameters so we can render any image size.        
+
+    // Set the parameters so we can render any image size.
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
-
     // attach renderbuffer and texture
     gl.framebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.RENDERBUFFER, renderBuffer);
     gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
-    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) != gl.FRAMEBUFFER_COMPLETE) {
+    if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) !== gl.FRAMEBUFFER_COMPLETE) {
         this._error("this combination of attachments does not work");
         return null;
     }
@@ -1326,9 +1406,8 @@ xViewer.prototype._getID = function (x, y) {
     }, this);
 
     //get colour in of the pixel
-    var result = new Uint8Array(4);
+    const result = new Uint8Array(4);
     gl.readPixels(x, y, 1, 1, gl.RGBA, gl.UNSIGNED_BYTE, result);
-
 
     //reset framebuffer to render into canvas again
     gl.bindFramebuffer(gl.FRAMEBUFFER, null);
@@ -1343,10 +1422,10 @@ xViewer.prototype._getID = function (x, y) {
     gl.enable(gl.BLEND);
 
     //decode ID (bit shifting by multiplication)
-    var hasValue = result[3] != 0; //0 transparency is only for no-values
+    const hasValue = result[3] !== 0; //0 transparency is only for no-values
     if (hasValue) {
-        var id = result[0] + result[1] * 256 + result[2] * 256 * 256;
-        var handled = false;
+        const id = result[0] + result[1] * 256 + result[2] * 256 * 256;
+        let handled = false;
         this._plugins.forEach(function (plugin) {
             if (!plugin.onBeforeGetId) {
                 return;
@@ -1369,11 +1448,11 @@ xViewer.prototype._getID = function (x, y) {
 * This function is bound to browser framerate of the screen so it will stop consuming any resources if you switch to another tab.
 *
 * @function xViewer#start
-* @param {Number} id [optional] - Optional ID of the model to be stopped. You can get this ID from {@link xViewer#event:loaded loaded} event.
+* @param id [optional] - Optional ID of the model to be stopped. You can get this ID from {@link xViewer#event:loaded loaded} event.
 */
 xViewer.prototype.start = function (id) {
     if (typeof (id) !== "undefined") {
-        var model = this._handles.filter(function (h) { return h.id === id; }).pop();
+        const model = this._handles.filter(function (h) { return h.id === id; }).pop();
         if (typeof (model) === "undefined")
             throw "Model doesn't exist.";
 
@@ -1383,28 +1462,29 @@ xViewer.prototype.start = function (id) {
     }
 
     this._isRunning = true;
-    var viewer = this;
-    var lastTime = new Date();
-    var counter = 0;
+    const viewer = this;
+    let lastTime = new Date();
+    let counter = 0;
+
     function tick() {
         counter++;
-        if (counter == 30) {
+        if (counter === 30) {
             counter = 0;
-            var newTime = new Date();
-            var span = newTime.getTime() - lastTime.getTime();
+            const newTime = new Date();
+            const span = newTime.getTime() - lastTime.getTime();
             lastTime = newTime;
-            var fps = 1000 / span * 30;
+            const fps = 1000 / span * 30;
             /**
             * Occurs after every 30th frame in animation. Use this event if you want to report FPS to the user. It might also be interesting performance measure.
             *
-            * @event xViewer#fps 
+            * @event xViewer#fps
             * @type {Number}
             */
             viewer._fire('fps', Math.floor(fps) );
         }
 
         if (viewer._isRunning) {
-            window.requestAnimFrame(tick)
+            window.requestAnimFrame(tick);
             viewer.draw()
         }
     }
@@ -1412,19 +1492,19 @@ xViewer.prototype.start = function (id) {
 };
 
 /**
-* Use this function to stop animation of the model. User will still be able to see the latest state of the model. You can 
+* Use this function to stop animation of the model. User will still be able to see the latest state of the model. You can
 * switch animation of the model on again by calling {@link xViewer#start start()}.
 *
 * @function xViewer#stop
 * @param {Number} id [optional] - Optional ID of the model to be stopped. You can get this ID from {@link xViewer#event:loaded loaded} event.
 */
 xViewer.prototype.stop = function (id) {
-    if (typeof (id) == "undefined") {
+    if (typeof (id) === "undefined") {
         this._isRunning = false;
         return;
     }
 
-    var model = this._handles.filter(function (h) { return h.id === id; }).pop();
+    const model = this._handles.filter(function (h) { return h.id === id; }).pop();
     if (typeof (model) === "undefined")
         throw "Model doesn't exist.";
 
@@ -1433,7 +1513,7 @@ xViewer.prototype.stop = function (id) {
 };
 
 /**
- * Use this method to register to events of the viewer like {@link xViewer#event:pick pick}, {@link xViewer#event:mouseDown mouseDown}, 
+ * Use this method to register to events of the viewer like {@link xViewer#event:pick pick}, {@link xViewer#event:mouseDown mouseDown},
  * {@link xViewer#event:loaded loaded} and others. You can define arbitrary number
  * of event handlers for any event. You can remove handler by calling {@link xViewer#off off()} method.
  *
@@ -1442,7 +1522,7 @@ xViewer.prototype.stop = function (id) {
  * @param {Object} callback - Callback handler of the event which will consume arguments and perform any custom action.
 */
 xViewer.prototype.on = function (eventName, callback) {
-    var events = this._events;
+    const events = this._events;
     if (!events[eventName]) {
         events[eventName] = [];
     }
@@ -1457,12 +1537,12 @@ xViewer.prototype.on = function (eventName, callback) {
 * @param {Object} callback - Handler to be removed
 */
 xViewer.prototype.off = function (eventName, callback) {
-    var events = this._events;
-    var callbacks = events[eventName];
+    const events = this._events;
+    const callbacks = events[eventName];
     if (!callbacks) {
         return;
     }
-    var index = callbacks.indexOf(callback);
+    const index = callbacks.indexOf(callback);
     if (index >= 0) {
         callbacks.splice(index, 1);
     }
@@ -1470,7 +1550,7 @@ xViewer.prototype.off = function (eventName, callback) {
 
 //executes all handlers bound to event name
 xViewer.prototype._fire = function (eventName, args) {
-    var handlers = this._events[eventName];
+    const handlers = this._events[eventName];
     if (!handlers) {
         return;
     }
@@ -1503,36 +1583,35 @@ xViewer.prototype._enableTextSelection = function () {
 xViewer.prototype._getSVGOverlay = function() {
     //check support for SVG
     if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) return false;
-    var ns = "http://www.w3.org/2000/svg";
+    const ns = "http://www.w3.org/2000/svg";
 
     function getOffsetRect(elem) {
-        var box = elem.getBoundingClientRect();
+        const box = elem.getBoundingClientRect();
 
-        var body = document.body;
-        var docElem = document.documentElement;
+        const body = document.body;
+        const docElem = document.documentElement;
 
-        var scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
-        var scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
+        const scrollTop = window.pageYOffset || docElem.scrollTop || body.scrollTop;
+        const scrollLeft = window.pageXOffset || docElem.scrollLeft || body.scrollLeft;
 
-        var clientTop = docElem.clientTop || body.clientTop || 0;
-        var clientLeft = docElem.clientLeft || body.clientLeft || 0;
-        var clientBottom = docElem.clientBottom || body.clientBottom || 0;
-        var clientRight = docElem.clientRight || body.clientRight || 0;
+        const clientTop = docElem.clientTop || body.clientTop || 0;
+        const clientLeft = docElem.clientLeft || body.clientLeft || 0;
+        const clientBottom = docElem.clientBottom || body.clientBottom || 0;
+        const clientRight = docElem.clientRight || body.clientRight || 0;
 
-
-        var top = Math.round(box.top + scrollTop - clientTop);
-        var left = Math.round(box.left + scrollLeft - clientLeft);
-        var bottom = Math.round(box.top + scrollTop - clientBottom);
-        var right = Math.round(box.left + scrollLeft - clientRight);
+        const top = Math.round(box.top + scrollTop - clientTop);
+        const left = Math.round(box.left + scrollLeft - clientLeft);
+        const bottom = Math.round(box.top + scrollTop - clientBottom);
+        const right = Math.round(box.left + scrollLeft - clientRight);
 
         return { top: top, left: left, width: right - left, height: bottom - top };
     }
 
     //create SVG overlay
-    var svg = document.createElementNS(ns, "svg");
+    const svg = document.createElementNS(ns, "svg");
     //document.body.appendChild(svg);
 
-    var cRect = getOffsetRect(this._canvas);
+    const cRect = getOffsetRect(this._canvas);
 
     svg.style.position = 'absolute';
     svg.style.top = cRect.top + 'px';
@@ -1552,24 +1631,24 @@ xViewer.prototype._getSVGOverlay = function() {
 * @return  {Number[][]} Point and normal defining current clipping plane
 */
 xViewer.prototype.getClip = function () {
-    var cp = this.clippingPlane;
+    const cp = this.clippingPlane;
     if (cp.every(function(e) { return e === 0; })) {
         return [[0, 0, 0], [0, 0, 0]];
     }
 
-    var normal = vec3.normalize([0.0 ,0.0, 0.0], [cp[0], cp[1], cp[2]]);
+    const normal = vec3.normalize([0.0 ,0.0, 0.0], [cp[0], cp[1], cp[2]]);
 
     //test if the last clipping point fits in the condition
-    var lp = this._lastClippingPoint;
-    var test = lp[0] * cp[0] + lp[1] * cp[1] + lp[2] * cp[2] + cp[3];
+    const lp = this._lastClippingPoint;
+    const test = lp[0] * cp[0] + lp[1] * cp[1] + lp[2] * cp[2] + cp[3];
     if (Math.abs(test) < 1e-5) {
         return [lp, normal];
     }
 
     //find the point on the plane
-    var x = cp[0] !== 0 ? -1.0 * cp[3] / cp[0] : 0.0;
-    var y = cp[1] !== 0 ? -1.0 * cp[3] / cp[1] : 0.0;
-    var z = cp[2] !== 0 ? -1.0 * cp[3] / cp[2] : 0.0;
+    const x = cp[0] !== 0 ? -1.0 * cp[3] / cp[0] : 0.0;
+    const y = cp[1] !== 0 ? -1.0 * cp[3] / cp[1] : 0.0;
+    const z = cp[2] !== 0 ? -1.0 * cp[3] / cp[2] : 0.0;
 
     return [[x,y,z], normal];
 };
@@ -1577,7 +1656,7 @@ xViewer.prototype.getClip = function () {
 /**
 * Use this method to clip the model. If you call the function with no arguments interactive clipping will start. This is based on SVG overlay
 * so SVG support is necessary for it. But as WebGL is more advanced technology than SVG it is sound assumption that it is present in the browser.
-* Use {@link xViewer.check xViewer.check()} to make sure it is supported at the very beginning of using of xViewer. Use {@link xViewer#unclip unclip()} method to 
+* Use {@link xViewer.check xViewer.check()} to make sure it is supported at the very beginning of using of xViewer. Use {@link xViewer#unclip unclip()} method to
 * unset clipping plane.
 *
 * @function xViewer#clip
@@ -1586,17 +1665,15 @@ xViewer.prototype.getClip = function () {
 * @fires xViewer#clipped
 */
 xViewer.prototype.clip = function (point, normal) {
-
     //non interactive clipping, all information is there
-    if (typeof (point) != 'undefined' && typeof (normal) != 'undefined') {
-
+    if (typeof (point) !== 'undefined' && typeof (normal) !== 'undefined') {
         this._lastClippingPoint = point;
 
         //compute normal equation of the plane
-        var d = 0.0 - normal[0] * point[0] - normal[1] * point[1] - normal[2] * point[2];
+        const d = 0.0 - normal[0] * point[0] - normal[1] * point[1] - normal[2] * point[2];
 
         //set clipping plane
-        this.clippingPlane = [normal[0], normal[1], normal[2], d]
+        this.clippingPlane = [normal[0], normal[1], normal[2], d];
 
         /**
         * Occurs when model is clipped. This event has empty object.
@@ -1609,20 +1686,20 @@ xViewer.prototype.clip = function (point, normal) {
     }
 
     //********************************************** Interactive clipping ********************************************//
-    var ns = "http://www.w3.org/2000/svg";
-    var svg = this._getSVGOverlay();
-    var viewer = this;
-    var position = {};
-    var down = false;
-    var g = {};
+    const ns = "http://www.w3.org/2000/svg";
+    const svg = this._getSVGOverlay();
+    const viewer = this;
+    const position = {};
+    let down = false;
+    let g = {};
 
-    var handleMouseDown = function (event) {
+    const handleMouseDown = function (event) {
         if (down) return;
         down = true;
 
         viewer._disableTextSelection();
 
-        var r = svg.getBoundingClientRect();
+        const r = svg.getBoundingClientRect();
         position.x = event.clientX - r.left;
         position.y = event.clientY - r.top;
         position.angle = 0.0;
@@ -1632,7 +1709,7 @@ xViewer.prototype.clip = function (point, normal) {
         g.setAttribute('id', 'section');
         svg.appendChild(g);
 
-        var line = document.createElementNS(ns, "line");
+        const line = document.createElementNS(ns, "line");
         g.appendChild(line);
 
         line.setAttribute('style', "stroke:rgb(255,0,0);stroke-width:2");
@@ -1642,52 +1719,51 @@ xViewer.prototype.clip = function (point, normal) {
         line.setAttribute('y2', -99999);
     };
 
-    var handleMouseUp = function (event) {
+    const handleMouseUp = function (event) {
         if (!down) return;
 
-        //check if the points are not identical. 
-        var r = svg.getBoundingClientRect();
-        if (position.x == event.clientX - r.left && position.y == event.clientY - r.top) {
+        //check if the points are not identical.
+        const r = svg.getBoundingClientRect();
+        if (position.x === event.clientX - r.left && position.y === event.clientY - r.top) {
             return;
         }
 
         down = false;
         viewer._enableTextSelection();
 
-
         //get inverse transformation
-        var transform = mat4.create();
+        const transform = mat4.create();
         mat4.multiply(transform, viewer._pMatrix, viewer._mvMatrix);
-        var inverse = mat4.create();
+
+        const inverse = mat4.create();
         mat4.invert(inverse, transform);
 
         //get normalized coordinates the point in WebGL CS
-        var x1 = position.x / (viewer._width / 2.0) - 1.0;
-        var y1 = 1.0 - position.y / (viewer._height / 2.0);
+        const x1 = position.x / (viewer._width / 2.0) - 1.0;
+        const y1 = 1.0 - position.y / (viewer._height / 2.0);
 
         //First point in WCS
-        var A = vec3.create();
+        const A = vec3.create();
         vec3.transformMat4(A, [x1, y1, -1], inverse); //near clipping plane
 
         //Second point in WCS
-        var B = vec3.create();
+        const B = vec3.create();
         vec3.transformMat4(B, [x1, y1, 1], inverse); //far clipping plane
 
         //Compute third point on plane
-        var angle = position.angle * Math.PI / 180.0 ;
-        var x2 = x1 + Math.cos(angle);
-        var y2 = y1 + Math.sin(angle);
+        const angle = position.angle * Math.PI / 180.0 ;
+        const x2 = x1 + Math.cos(angle);
+        const y2 = y1 + Math.sin(angle);
 
         //Third point in WCS
-        var C = vec3.create();
+        const C = vec3.create();
         vec3.transformMat4(C, [x2, y2, 1], inverse); // far clipping plane
 
-
         //Compute normal in WCS
-        var BA = vec3.subtract(vec3.create(), A, B);
-        var BC = vec3.subtract(vec3.create(), C, B);
-        var N = vec3.cross(vec3.create(), BA, BC);
-        
+        const BA = vec3.subtract(vec3.create(), A, B);
+        const BC = vec3.subtract(vec3.create(), C, B);
+        const N = vec3.cross(vec3.create(), BA, BC);
+
         viewer.clip(B, N);
 
         //clean
@@ -1697,27 +1773,27 @@ xViewer.prototype.clip = function (point, normal) {
         window.removeEventListener('mousemove', handleMouseMove, true);
     };
 
-    var handleMouseMove = function (event) {
+    const handleMouseMove = function (event) {
         if (!down) return;
 
-        var r = svg.getBoundingClientRect();
-        var x = event.clientX - r.left;
-        var y = event.clientY - r.top;
+        const r = svg.getBoundingClientRect();
+        const x = event.clientX - r.left;
+        const y = event.clientY - r.top;
 
         //rotate
-        var dX = x - position.x;
-        var dY = y - position.y;
-        var angle = Math.atan2(dX, dY) * -180.0 / Math.PI + 90.0;
+        const dX = x - position.x;
+        const dY = y - position.y;
+        let angle = Math.atan2(dY, dX) * -180.0 / Math.PI + 90.0;
 
         //round to 5 DEG
-        angle = Math.round(angle / 5.0) * 5.0
+        angle = Math.round(angle / 5.0) * 5.0;
         position.angle = 360.0 - angle + 90;
 
         g.setAttribute('transform', 'rotate(' + angle + ' ' + position.x + ' ' + position.y + ')');
-    }
+    };
 
     //this._canvas.parentNode.appendChild(svg);
-    document.documentElement.appendChild(svg)
+    document.documentElement.appendChild(svg);
     svg.addEventListener('mousedown', handleMouseDown, true);
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('mousemove', handleMouseMove, true);
@@ -1734,14 +1810,14 @@ xViewer.prototype.clip = function (point, normal) {
 
 /**
 * This method is only active when interactive clipping is active. It stops interactive clipping operation.
-* 
+*
 * @function xViewer#stopClipping
 */
 //this is only a placeholder. It is actually created only when interactive clipping is active.
 xViewer.prototype.stopClipping = function() {};
 
 /**
-* This method will cancel any clipping plane if it is defined. Use {@link xViewer#clip clip()} 
+* This method will cancel any clipping plane if it is defined. Use {@link xViewer#clip clip()}
 * method to define clipping by point and normal of the plane or interactively if you call it with no arguments.
 * @function xViewer#unclip
 * @fires xViewer#unclipped
