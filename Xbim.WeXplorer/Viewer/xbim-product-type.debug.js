@@ -1,4 +1,3 @@
-// noinspection JSDuplicatedDeclaration
 /**
 * Enumeration of product types.
 * @readonly

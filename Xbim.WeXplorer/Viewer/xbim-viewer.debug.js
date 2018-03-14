@@ -15,7 +15,7 @@ function xViewer(canvas) {
         throw 'Canvas has to be defined';
     }
     this._canvas = null;
-    if (typeof(canvas.nodeName) !== 'undefined' && canvas.nodeName === 'CANVAS') {
+    if (typeof (canvas.nodeName) !== 'undefined' && canvas.nodeName === 'CANVAS') {
         this._canvas = canvas;
     }
     if (typeof (canvas) === 'string') {
@@ -141,10 +141,10 @@ function xViewer(canvas) {
 
     //detect floating point texture support
     this._fpt = (
-    gl.getExtension('OES_texture_float') ||
-    gl.getExtension('MOZ_OES_texture_float') ||
-    gl.getExtension('WEBKIT_OES_texture_float')
-  );
+        gl.getExtension('OES_texture_float') ||
+        gl.getExtension('MOZ_OES_texture_float') ||
+        gl.getExtension('WEBKIT_OES_texture_float')
+    );
 
 
     //set up DEPTH_TEST and BLEND so that transparent objects look right
@@ -274,16 +274,16 @@ xViewer.check = function () {
     //check WebGL support
     const canvas = document.createElement('canvas');
     if (!canvas) {
-      result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
+        result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
     } else {
         const gl = WebGLUtils.setupWebGL(canvas);
         if (gl === null) result.errors.push("Browser doesn't support WebGL. This is critical.");
         else {
             //check floating point extension availability
             const fpt = (
-              gl.getExtension('OES_texture_float') ||
-              gl.getExtension('MOZ_OES_texture_float') ||
-              gl.getExtension('WEBKIT_OES_texture_float')
+                gl.getExtension('OES_texture_float') ||
+                gl.getExtension('MOZ_OES_texture_float') ||
+                gl.getExtension('WEBKIT_OES_texture_float')
             );
             if (!fpt) result.warnings.push('Floating point texture extension is not supported. Performance of the viewer will be very bad. But it should work.');
 
@@ -294,14 +294,14 @@ xViewer.check = function () {
     }
 
     //check FileReader and Blob support
-    if (!window.File || !window.FileReader ||  !window.Blob)  result.errors.push("Browser doesn't support 'File', 'FileReader' or 'Blob' objects.");
+    if (!window.File || !window.FileReader || !window.Blob) result.errors.push("Browser doesn't support 'File', 'FileReader' or 'Blob' objects.");
 
     //check for typed arrays
     if (!window.Int32Array || !window.Float32Array) result.errors.push("Browser doesn't support TypedArrays. These are crucial for binary parsing and for comunication with GPU.");
 
     //check SVG support
     if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) {
-      result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
+        result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
     }
 
     //set boolean members for convenience
@@ -408,7 +408,7 @@ xViewer.prototype.resetStates = function (hideSpaces) {
 
     //hide spaces
     hideSpaces = typeof (hideSpaces) !== 'undefined' ? hideSpaces : true;
-    if (hideSpaces){
+    if (hideSpaces) {
         this._handles.forEach(function (handle) {
             handle.setState(xState.HIDDEN, xProductType.IFCSPACE);
         }, this);
@@ -528,7 +528,7 @@ xViewer.prototype.getProductType = function (prodId) {
 */
 xViewer.prototype.setCameraPosition = function (coordinates) {
     if (typeof (coordinates) === 'undefined') throw 'Parameter coordinates must be defined';
-    mat4.lookAt(this._mvMatrix, coordinates, this._origin, [0,0,1]);
+    mat4.lookAt(this._mvMatrix, coordinates, this._origin, [0, 0, 1]);
 };
 
 /**
@@ -600,16 +600,17 @@ xViewer.prototype.set = function (settings) {
 * You can load more than one model if they occupy the same space, use the same scale and have unique product IDs. Duplicated IDs won't affect
 * visualization itself but would cause unexpected user interaction (picking, zooming, ...)
 * @function xViewer#load
+* @param modelId
 * @param {String | Blob | File} model - Model has to be either URL to wexBIM file or Blob or File representing wexBIM file binary data.
 * @param tag - tag to be used to identify the model
 * @param progressCallback
 * @param appendOptions
 * @fires xViewer#loaded
 */
-xViewer.prototype.load = function (model, tag, progressCallback, appendOptions) {
+xViewer.prototype.load = function (modelId, model, tag, progressCallback, appendOptions) {
     if (appendOptions === undefined) appendOptions = null;
     if (typeof (model) === 'undefined') throw 'You have to specify model to load.';
-    if (typeof(model) !== 'string' && !(model instanceof Blob) && !(model instanceof File))
+    if (typeof (model) !== 'string' && !(model instanceof Blob) && !(model instanceof File))
         throw 'Model has to be specified either as a URL to wexBIM file or Blob object representing the wexBIM file.';
 
     const viewer = this;
@@ -618,29 +619,53 @@ xViewer.prototype.load = function (model, tag, progressCallback, appendOptions) 
         progressCallback('modelLoaderStage.rendering');
     }
 
+    if (modelId === undefined) {
+        modelId = xModelGeometry._instancesNum;
+        xModelGeometry._instancesNum++;
+    }
+
     // noinspection JSPotentiallyInvalidConstructorUsage
     const geometry = new xModelGeometry();
-    geometry.id = xModelGeometry._instancesNum;
+    geometry.id = modelId;
     geometry.onloaded = function () {
         viewer._addHandle(geometry, tag, appendOptions);
     };
     geometry.onerror = function (msg) {
         viewer._error(msg);
     };
-    geometry.load(model);
 
     if (appendOptions) {
-        xModelGeometry._appendedModels[geometry.id] = {
+        xModelGeometry._appendedModels[modelId] = {
+            model: model,
             options: appendOptions,
             productIdsMap: []
         };
     }
 
-    xModelGeometry._instancesNum++;
+    geometry.load(model);
+    return geometry;
 };
 
-xViewer.prototype.append = function (model, tag, options) {
-    this.load(model, tag, undefined, options);
+xViewer.prototype.append = function (modelId, model, tag, options) {
+    return this.load(modelId, model, tag, undefined, options);
+};
+
+xViewer.prototype.setModelPosition = function (modelId, params) {
+    let handle = this._handles.filter(function (h) { return h._model.id === modelId }).pop();
+    if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist.";
+
+    //remove old model
+    this.unload(modelId);
+
+    const appendedModel = xModelGeometry._appendedModels[modelId];
+    const paramsMerged = Object.assign(appendedModel.options, params);
+
+    if (paramsMerged.hasOwnProperty('onLoad')) {
+        paramsMerged.onLoad = null;
+    }
+
+    //add a new model with new parameters
+    this.append(modelId, appendedModel.model, undefined, paramsMerged);
 };
 
 //this is a private function used to add loaded geometry as a new handle and to set up camera and
@@ -701,7 +726,7 @@ xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
     if (appendOptions) {
         eventName = 'appended';
 
-        if (appendOptions.color !== undefined) {
+        if (appendOptions.hasOwnProperty('color')) {
             if (appendOptions.color[3] === undefined) {
                 appendOptions.color[3] = 255;
             }
@@ -717,6 +742,10 @@ xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
                 }
             }
         }
+
+        if (appendOptions.hasOwnProperty('onLoad') && appendOptions.onLoad !== null) {
+            appendOptions.onLoad();
+        }
     }
 
     viewer._fire(eventName, { id: handle.id, tag: tag, geometry: geometry });
@@ -730,7 +759,7 @@ xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
  * @param {Number} modelId - ID of the model which you can get from {@link xViewer#event:loaded loaded} event.
  */
 xViewer.prototype.unload = function (modelId) {
-    let handle = this._handles.filter(function (h) { return h.id === modelId }).pop();
+    let handle = this._handles.filter(function (h) { return h._model.id === modelId }).pop();
     if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist or was unloaded already.";
 
     //stop for start so it doesn't interfere with the rendering loop
@@ -745,7 +774,6 @@ xViewer.prototype.unload = function (modelId) {
     handle.unload();
     handle = null;
 };
-
 
 //this function should be only called once during initialization
 //or when shader set-up changes
@@ -857,7 +885,7 @@ xViewer.prototype._initMouseEvents = function () {
         * @type {object}
         * @param {Number} id - product ID of the element or null if there wasn't any product under mouse
         */
-        viewer._fire('mouseDown', {id: id});
+        viewer._fire('mouseDown', { id: id });
 
         //keep information about the mouse button
         switch (event.button) {
@@ -897,7 +925,7 @@ xViewer.prototype._initMouseEvents = function () {
 
                 if (appendedModel.productIdsMap.indexOf(id) !== -1) {
                     if (appendedModel.options.onClick) {
-                      appendedModel.options.onClick();
+                        appendedModel.options.onClick();
                     }
 
                     return;
@@ -919,7 +947,7 @@ xViewer.prototype._initMouseEvents = function () {
             * @type {object}
             * @param {Number} id - product ID of the element or null if there wasn't any product under mouse
             */
-            if(!handled) viewer._fire('pick', {id : id});
+            if (!handled) viewer._fire('pick', { id: id });
         }
 
         viewer._enableTextSelection();
@@ -1042,7 +1070,7 @@ xViewer.prototype._initMouseEvents = function () {
 
                 // "deltaY < 0" because the limit applies only when zooming out
                 if (Math.abs(zoomRatio) >= maxZoomRation && deltaY < 0) {
-                  return;
+                    //return;
                 }
 
                 mat4.translate(transform, transform, [0, 0, zoomRatio]);
@@ -1077,7 +1105,7 @@ xViewer.prototype._initMouseEvents = function () {
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('mousemove', handleMouseMove, true);
 
-    this._canvas.addEventListener('mousemove', function() {
+    this._canvas.addEventListener('mousemove', function () {
         viewer._userAction = true;
     }, true);
 
@@ -1131,7 +1159,7 @@ xViewer.prototype.draw = function () {
 
         case 'orthogonal':
             mat4.ortho(this._pMatrix, this.orthogonalCamera.left, this.orthogonalCamera.right, this.orthogonalCamera.bottom,
-                       this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
+                this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
             break;
 
         default:
@@ -1151,10 +1179,10 @@ xViewer.prototype.draw = function () {
 
     //update highlighting colour
     gl.uniform4fv(this._highlightingColourUniformPointer, new Float32Array(
-        [this.highlightingColour[0]/255.0,
-        this.highlightingColour[1]/255.0,
-        this.highlightingColour[2]/255.0,
-        this.highlightingColour[3]/255.0]));
+        [this.highlightingColour[0] / 255.0,
+        this.highlightingColour[1] / 255.0,
+        this.highlightingColour[2] / 255.0,
+        this.highlightingColour[3] / 255.0]));
 
     //check for x-ray mode
     if (this.renderingMode === 'x-ray') {
@@ -1288,7 +1316,7 @@ xViewer.prototype.show = function (type) {
         //top and bottom are different because these are singular points for look-at function if heading is [0,0,1]
         case 'top':
             //only move to origin and up (negative values because we move camera against model)
-            mat4.translate(this._mvMatrix, mat4.create(), [origin[0] * -1.0, origin[1] * -1.0, (distance + origin[2])* -1.0 ]);
+            mat4.translate(this._mvMatrix, mat4.create(), [origin[0] * -1.0, origin[1] * -1.0, (distance + origin[2]) * -1.0]);
             return;
         case 'bottom':
             //only move to origin and up and rotate 180 degrees around Y axis
@@ -1325,7 +1353,7 @@ xViewer.prototype._error = function (msg) {
     * @type {object}
     * @param {string} message - Error message
     */
-    this._fire('error', {message: msg});
+    this._fire('error', { message: msg });
 };
 
 //this renders the colour coded model into the memory buffer
@@ -1480,7 +1508,7 @@ xViewer.prototype.start = function (id) {
             * @event xViewer#fps
             * @type {Number}
             */
-            viewer._fire('fps', Math.floor(fps) );
+            viewer._fire('fps', Math.floor(fps));
         }
 
         if (viewer._isRunning) {
@@ -1580,7 +1608,7 @@ xViewer.prototype._enableTextSelection = function () {
     document.documentElement.style['user-select'] = 'text';
 };
 
-xViewer.prototype._getSVGOverlay = function() {
+xViewer.prototype._getSVGOverlay = function () {
     //check support for SVG
     if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) return false;
     const ns = "http://www.w3.org/2000/svg";
@@ -1632,11 +1660,11 @@ xViewer.prototype._getSVGOverlay = function() {
 */
 xViewer.prototype.getClip = function () {
     const cp = this.clippingPlane;
-    if (cp.every(function(e) { return e === 0; })) {
+    if (cp.every(function (e) { return e === 0; })) {
         return [[0, 0, 0], [0, 0, 0]];
     }
 
-    const normal = vec3.normalize([0.0 ,0.0, 0.0], [cp[0], cp[1], cp[2]]);
+    const normal = vec3.normalize([0.0, 0.0, 0.0], [cp[0], cp[1], cp[2]]);
 
     //test if the last clipping point fits in the condition
     const lp = this._lastClippingPoint;
@@ -1650,7 +1678,7 @@ xViewer.prototype.getClip = function () {
     const y = cp[1] !== 0 ? -1.0 * cp[3] / cp[1] : 0.0;
     const z = cp[2] !== 0 ? -1.0 * cp[3] / cp[2] : 0.0;
 
-    return [[x,y,z], normal];
+    return [[x, y, z], normal];
 };
 
 /**
@@ -1751,7 +1779,7 @@ xViewer.prototype.clip = function (point, normal) {
         vec3.transformMat4(B, [x1, y1, 1], inverse); //far clipping plane
 
         //Compute third point on plane
-        const angle = position.angle * Math.PI / 180.0 ;
+        const angle = position.angle * Math.PI / 180.0;
         const x2 = x1 + Math.cos(angle);
         const y2 = y1 + Math.sin(angle);
 
@@ -1798,13 +1826,13 @@ xViewer.prototype.clip = function (point, normal) {
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('mousemove', handleMouseMove, true);
 
-    this.stopClipping = function() {
+    this.stopClipping = function () {
         svg.parentNode.removeChild(svg);
         svg.removeEventListener('mousedown', handleMouseDown, true);
         window.removeEventListener('mouseup', handleMouseUp, true);
         window.removeEventListener('mousemove', handleMouseMove, true);
         //clear also itself
-        viewer.stopClipping = function() {};
+        viewer.stopClipping = function () { };
     };
 };
 
@@ -1814,7 +1842,7 @@ xViewer.prototype.clip = function (point, normal) {
 * @function xViewer#stopClipping
 */
 //this is only a placeholder. It is actually created only when interactive clipping is active.
-xViewer.prototype.stopClipping = function() {};
+xViewer.prototype.stopClipping = function () { };
 
 /**
 * This method will cancel any clipping plane if it is defined. Use {@link xViewer#clip clip()}

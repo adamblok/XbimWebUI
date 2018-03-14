@@ -44,7 +44,7 @@ xTriangulatedShape.prototype.parse = function (binReader) {
             const planarIndices = readIndex(3 * numTrianglesInFace);
             self.indices.set(planarIndices, iIndex);
 
-            for (let j = 0; j < numTrianglesInFace*3; j++) {
+            for (let j = 0; j < numTrianglesInFace * 3; j++) {
                 //add three identical normals because this is planar but needs to be expanded for WebGL
                 self.normals[iIndex * 2] = normal[0];
                 self.normals[iIndex * 2 + 1] = normal[1];

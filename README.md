@@ -6,14 +6,42 @@ The biggest differences compared to the original library are:
 - method that could be used for adding an extra model to a scene to provided position, with provided scale and color:
 
 ```ecmascript 6
-viewer.append('sign.wexbim', undefined, {
+viewer.append(undefined, 'sign.wexbim', undefined, {
   x: 200,
   y: 150,
   z: 20,
   scale: 1.5,
   color: [255, 0, 0], // red, green, blue
+  onLoad: () => {
+    console.log('Loaded');
+  }
   onClick: () => {
-    alert('the sign was clicked');
+    console.log('Clicked');
+  }
+});
+```
+
+- appended models can be dynamically changing:
+
+```ecmascript 6
+let signPosY = 150;
+
+const signModel = viewer.append(undefined, 'sign.wexbim', undefined, {
+  x: 200,
+  y: signPosY,
+  z: 20,
+  scale: 1.5,
+  color: [255, 0, 0], // red, green, blue
+  onLoad: () => {
+    setInterval(() => { // moving the sign
+      signPosY += 5;
+
+      this.modelViewer.setModelPosition(signModel.id, {
+        x: 200,
+        y: signPosY,
+        z: 20
+      });
+    }, 500);
   }
 });
 ```

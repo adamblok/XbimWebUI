@@ -37,7 +37,10 @@ xBinaryReader.prototype.load = function (source) {
     this._position = 0;
     const self = this;
 
-    if (typeof (source) === 'undefined' || source === null) throw 'Source must be defined';
+    if (typeof (source) === 'undefined' || source === null) {
+        throw 'Source must be defined';
+    }
+
     if (typeof (source) === 'string') {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", source, true);
@@ -48,6 +51,7 @@ xBinaryReader.prototype.load = function (source) {
                     if (fReader.result) {
                         //set data buffer for next processing
                         self._buffer = fReader.result;
+
                         //do predefined processing of the data
                         if (self.onloaded) {
                             self.onloaded();
@@ -56,10 +60,11 @@ xBinaryReader.prototype.load = function (source) {
                 };
                 fReader.readAsArrayBuffer(xhr.response);
             }
+
             //throw exception as a warning
             if (xhr.readyState === 4 && xhr.status !== 200) {
                 const msg = 'Failed to fetch binary data from server. Server code: ' + xhr.status + '.' +
-                            'This might be due to CORS policy of your browser if you run this as a local file.';
+                    'This might be due to CORS policy of your browser if you run this as a local file.';
 
                 if (self.onerror) self.onerror(msg);
                 throw msg;
@@ -68,8 +73,7 @@ xBinaryReader.prototype.load = function (source) {
 
         xhr.responseType = 'blob';
         xhr.send();
-    }
-    else if (source instanceof Blob || source instanceof File) {
+    } else if (source instanceof Blob || source instanceof File) {
         const fReader = new FileReader();
         fReader.onloadend = function () {
             if (fReader.result) {
@@ -82,8 +86,7 @@ xBinaryReader.prototype.load = function (source) {
             }
         };
         fReader.readAsArrayBuffer(source);
-    }
-    else if (source instanceof ArrayBuffer) {
+    } else if (source instanceof ArrayBuffer) {
         this._buffer = source;
     }
 };
@@ -171,13 +174,14 @@ xBinaryReader.prototype.readPoint = function (count) {
     return count === 1 ? result[0] : result;
 };
 
+// noinspection JSPotentiallyInvalidConstructorUsage
 xBinaryReader.prototype.readRgba = function (count) {
     if (typeof (count) === "undefined") count = 1;
 
     const values = this.readByte(count * 4);
     const result = new Array(count);
 
-    for (let i = 0; i < count ; i++) {
+    for (let i = 0; i < count; i++) {
         const offset = i * 4;
         result[i] = new Uint8Array(values.buffer, offset, 4);
     }
@@ -220,8 +224,7 @@ xBinaryReader.prototype.readMatrix4x4_64 = function (count) {
         result[i] = new Float64Array(values.buffer, offset, 16);
     }
     return count === 1 ? result[0] : result;
-};
-function xModelGeometry() {
+};function xModelGeometry() {
     //all this data is to be fed into GPU as attributes
     this.normals = [];
     this.indices = [];
@@ -348,7 +351,7 @@ xModelGeometry.prototype.parse = function (binReader) {
     }
 
     const styleMap = [];
-    styleMap.getStyle = function(id) {
+    styleMap.getStyle = function (id) {
         for (let i = 0; i < this.length; i++) {
             const item = this[i];
             if (item.id === id) return item;
@@ -377,7 +380,7 @@ xModelGeometry.prototype.parse = function (binReader) {
     const modelId = this.id;
     const appendedModel = xModelGeometry._appendedModels[modelId];
 
-    for (let i = 0; i < numProducts ; i++) {
+    for (let i = 0; i < numProducts; i++) {
         let productLabel = br.readInt32();
 
         if (appendedModel) {
@@ -465,8 +468,8 @@ xModelGeometry.prototype.parse = function (binReader) {
 
             //switch spaces and openings off by default
             const state = map.type === typeEnum.IFCSPACE || map.type === typeEnum.IFCOPENINGELEMENT ?
-                  stateEnum.HIDDEN :
-                  0xFF; //0xFF is for the default state
+                stateEnum.HIDDEN :
+                0xFF; //0xFF is for the default state
 
             //fix indices to right absolute position. It is relative to the shape.
             for (let i = 0; i < shapeGeom.indices.length; i++) {
@@ -563,13 +566,13 @@ xModelGeometry.prototype.load = function (source) {
 };
 
 xModelGeometry.prototype.onloaded = function () { };
-xModelGeometry.prototype.onerror = function () { };
-//this class holds pointers to textures, uniforms and data buffers which
+xModelGeometry.prototype.onerror = function () { };//this class holds pointers to textures, uniforms and data buffers which
 //make up a model in GPU
 
 //gl: WebGL context
 //model: xModelGeometry
 //fpt: bool (floating point texture support)
+
 function xModelHandle(gl, model, fpt) {
     if (typeof (gl) === 'undefined' || typeof (model) === 'undefined' || typeof (fpt) === 'undefined') {
         throw 'WebGL context and geometry model must be specified';
@@ -670,7 +673,6 @@ xModelHandle.prototype.setActive = function (pointers) {
     gl.activeTexture(gl.TEXTURE4);
     gl.bindTexture(gl.TEXTURE_2D, this.stateStyleTexture);
 
-
     //set attributes and uniforms
     gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
     gl.vertexAttribPointer(pointers.normalAttrPointer, 2, gl.UNSIGNED_BYTE, false, 0, 0);
@@ -741,7 +743,7 @@ xModelHandle.prototype.getProductMap = function (ID) {
     const map = this._model.productMap[ID];
 
     if (typeof (map) !== "undefined") {
-      return map;
+        return map;
     }
 
     return null;
@@ -942,7 +944,7 @@ xModelHandle.prototype.resetStyles = function () {
     this._bufferData(this.stateBuffer, this._model.states);
 };
 
-xModelHandle.prototype.getModelState = function() {
+xModelHandle.prototype.getModelState = function () {
     const result = [];
     const products = this._model.productMap;
 
@@ -984,9 +986,7 @@ xModelHandle.prototype.restoreModelState = function (state) {
 
     //buffer data to GPU
     this._bufferData(this.stateBuffer, this._model.states);
-};const xProductInheritance = { name: "IfcProduct", id: 20, abs: true, children: [{ name: "IfcElement", id: 19, abs: true, children: [{ name: "IfcDistributionElement", id: 44, abs: false, children: [{ name: "IfcDistributionFlowElement", id: 45, abs: false, children: [{ name: "IfcDistributionChamberElement", id: 180, abs: false }, { name: "IfcEnergyConversionDevice", id: 175, abs: false, children: [{ name: "IfcAirToAirHeatRecovery", id: 1097, abs: false }, { name: "IfcBoiler", id: 1105, abs: false }, { name: "IfcBurner", id: 1109, abs: false }, { name: "IfcChiller", id: 1119, abs: false }, { name: "IfcCoil", id: 1124, abs: false }, { name: "IfcCondenser", id: 1132, abs: false }, { name: "IfcCooledBeam", id: 1141, abs: false }, { name: "IfcCoolingTower", id: 1142, abs: false }, { name: "IfcEngine", id: 1164, abs: false }, { name: "IfcEvaporativeCooler", id: 1166, abs: false }, { name: "IfcEvaporator", id: 1167, abs: false }, { name: "IfcHeatExchanger", id: 1187, abs: false }, { name: "IfcHumidifier", id: 1188, abs: false }, { name: "IfcTubeBundle", id: 1305, abs: false }, { name: "IfcUnitaryEquipment", id: 1310, abs: false }, { name: "IfcElectricGenerator", id: 1160, abs: false }, { name: "IfcElectricMotor", id: 1161, abs: false }, { name: "IfcMotorConnection", id: 1216, abs: false }, { name: "IfcSolarDevice", id: 1270, abs: false }, { name: "IfcTransformer", id: 1303, abs: false }] }, { name: "IfcFlowController", id: 121, abs: false, children: [{ name: "IfcElectricDistributionPoint", id: 242, abs: false }, { name: "IfcAirTerminalBox", id: 1096, abs: false }, { name: "IfcDamper", id: 1148, abs: false }, { name: "IfcFlowMeter", id: 1182, abs: false }, { name: "IfcValve", id: 1311, abs: false }, { name: "IfcElectricDistributionBoard", id: 1157, abs: false }, { name: "IfcElectricTimeControl", id: 1162, abs: false }, { name: "IfcProtectiveDevice", id: 1235, abs: false }, { name: "IfcSwitchingDevice", id: 1290, abs: false }] }, { name: "IfcFlowFitting", id: 467, abs: false, children: [{ name: "IfcDuctFitting", id: 1153, abs: false }, { name: "IfcPipeFitting", id: 1222, abs: false }, { name: "IfcCableCarrierFitting", id: 1111, abs: false }, { name: "IfcCableFitting", id: 1113, abs: false }, { name: "IfcJunctionBox", id: 1195, abs: false }] }, { name: "IfcFlowMovingDevice", id: 502, abs: false, children: [{ name: "IfcCompressor", id: 1131, abs: false }, { name: "IfcFan", id: 1177, abs: false }, { name: "IfcPump", id: 1238, abs: false }] }, { name: "IfcFlowSegment", id: 574, abs: false, children: [{ name: "IfcDuctSegment", id: 1154, abs: false }, { name: "IfcPipeSegment", id: 1223, abs: false }, { name: "IfcCableCarrierSegment", id: 1112, abs: false }, { name: "IfcCableSegment", id: 1115, abs: false }] }, { name: "IfcFlowStorageDevice", id: 371, abs: false, children: [{ name: "IfcTank", id: 1293, abs: false }, { name: "IfcElectricFlowStorageDevice", id: 1159, abs: false }] }, { name: "IfcFlowTerminal", id: 46, abs: false, children: [{ name: "IfcFireSuppressionTerminal", id: 1179, abs: false }, { name: "IfcSanitaryTerminal", id: 1262, abs: false }, { name: "IfcStackTerminal", id: 1277, abs: false }, { name: "IfcWasteTerminal", id: 1315, abs: false }, { name: "IfcAirTerminal", id: 1095, abs: false }, { name: "IfcMedicalDevice", id: 1212, abs: false }, { name: "IfcSpaceHeater", id: 1272, abs: false }, { name: "IfcAudioVisualAppliance", id: 1099, abs: false }, { name: "IfcCommunicationsAppliance", id: 1127, abs: false }, { name: "IfcElectricAppliance", id: 1156, abs: false }, { name: "IfcLamp", id: 1198, abs: false }, { name: "IfcLightFixture", id: 1199, abs: false }, { name: "IfcOutlet", id: 1219, abs: false }] }, { name: "IfcFlowTreatmentDevice", id: 425, abs: false, children: [{ name: "IfcInterceptor", id: 1193, abs: false }, { name: "IfcDuctSilencer", id: 1155, abs: false }, { name: "IfcFilter", id: 1178, abs: false }] }] }, { name: "IfcDistributionControlElement", id: 468, abs: false, children: [{ name: "IfcProtectiveDeviceTrippingUnit", id: 1236, abs: false }, { name: "IfcActuator", id: 1091, abs: false }, { name: "IfcAlarm", id: 1098, abs: false }, { name: "IfcController", id: 1139, abs: false }, { name: "IfcFlowInstrument", id: 1181, abs: false }, { name: "IfcSensor", id: 1264, abs: false }, { name: "IfcUnitaryControlElement", id: 1308, abs: false }] }] }, { name: "IfcElementComponent", id: 424, abs: true, children: [{ name: "IfcDiscreteAccessory", id: 423, abs: false }, { name: "IfcFastener", id: 535, abs: false, children: [{ name: "IfcMechanicalFastener", id: 536, abs: false }] }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }, { name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcMechanicalFastener", id: 536, abs: false }, { name: "IfcVibrationIsolator", id: 1312, abs: false }] }, { name: "IfcFeatureElement", id: 386, abs: true, children: [{ name: "IfcFeatureElementSubtraction", id: 499, abs: true, children: [{ name: "IfcEdgeFeature", id: 764, abs: true, children: [{ name: "IfcChamferEdgeFeature", id: 765, abs: false }, { name: "IfcRoundedEdgeFeature", id: 766, abs: false }] }, { name: "IfcOpeningElement", id: 498, abs: false, children: [{ name: "IfcOpeningStandardCase", id: 1217, abs: false }] }, { name: "IfcVoidingFeature", id: 1313, abs: false }] }, { name: "IfcFeatureElementAddition", id: 385, abs: true, children: [{ name: "IfcProjectionElement", id: 384, abs: false }] }, { name: "IfcSurfaceFeature", id: 1287, abs: false }] }, { name: "IfcBuildingElement", id: 26, abs: true, children: [{ name: "IfcBuildingElementComponent", id: 221, abs: true, children: [{ name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }] }, { name: "IfcFooting", id: 120, abs: false }, { name: "IfcPile", id: 572, abs: false }, { name: "IfcBeam", id: 171, abs: false, children: [{ name: "IfcBeamStandardCase", id: 1104, abs: false }] }, { name: "IfcColumn", id: 383, abs: false, children: [{ name: "IfcColumnStandardCase", id: 1126, abs: false }] }, { name: "IfcCurtainWall", id: 456, abs: false }, { name: "IfcDoor", id: 213, abs: false, children: [{ name: "IfcDoorStandardCase", id: 1151, abs: false }] }, { name: "IfcMember", id: 310, abs: false, children: [{ name: "IfcMemberStandardCase", id: 1214, abs: false }] }, { name: "IfcPlate", id: 351, abs: false, children: [{ name: "IfcPlateStandardCase", id: 1224, abs: false }] }, { name: "IfcRailing", id: 350, abs: false }, { name: "IfcRamp", id: 414, abs: false }, { name: "IfcRampFlight", id: 348, abs: false }, { name: "IfcRoof", id: 347, abs: false }, { name: "IfcSlab", id: 99, abs: false, children: [{ name: "IfcSlabElementedCase", id: 1268, abs: false }, { name: "IfcSlabStandardCase", id: 1269, abs: false }] }, { name: "IfcStair", id: 346, abs: false }, { name: "IfcStairFlight", id: 25, abs: false }, { name: "IfcWall", id: 452, abs: false, children: [{ name: "IfcWallStandardCase", id: 453, abs: false }, { name: "IfcWallElementedCase", id: 1314, abs: false }] }, { name: "IfcWindow", id: 667, abs: false, children: [{ name: "IfcWindowStandardCase", id: 1316, abs: false }] }, { name: "IfcBuildingElementProxy", id: 560, abs: false }, { name: "IfcCovering", id: 382, abs: false }, { name: "IfcChimney", id: 1120, abs: false }, { name: "IfcShadingDevice", id: 1265, abs: false }] }, { name: "IfcElementAssembly", id: 18, abs: false }, { name: "IfcFurnishingElement", id: 253, abs: false, children: [{ name: "IfcFurniture", id: 1184, abs: false }, { name: "IfcSystemFurnitureElement", id: 1291, abs: false }] }, { name: "IfcTransportElement", id: 416, abs: false }, { name: "IfcVirtualElement", id: 168, abs: false }, { name: "IfcElectricalElement", id: 23, abs: false }, { name: "IfcEquipmentElement", id: 212, abs: false }, { name: "IfcCivilElement", id: 1122, abs: false }, { name: "IfcGeographicElement", id: 1185, abs: false }] }, { name: "IfcPort", id: 179, abs: true, children: [{ name: "IfcDistributionPort", id: 178, abs: false }] }, { name: "IfcProxy", id: 447, abs: false }, { name: "IfcStructuralActivity", id: 41, abs: true, children: [{ name: "IfcStructuralAction", id: 40, abs: true, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false, children: [{ name: "IfcStructuralLinearActionVarying", id: 464, abs: false }] }, { name: "IfcStructuralPlanarAction", id: 39, abs: false, children: [{ name: "IfcStructuralPlanarActionVarying", id: 357, abs: false }] }, { name: "IfcStructuralPointAction", id: 356, abs: false }, { name: "IfcStructuralCurveAction", id: 1279, abs: false, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false }] }, { name: "IfcStructuralSurfaceAction", id: 1284, abs: false, children: [{ name: "IfcStructuralPlanarAction", id: 39, abs: false }] }] }, { name: "IfcStructuralReaction", id: 355, abs: true, children: [{ name: "IfcStructuralPointReaction", id: 354, abs: false }, { name: "IfcStructuralCurveReaction", id: 1280, abs: false }, { name: "IfcStructuralSurfaceReaction", id: 1285, abs: false }] }] }, { name: "IfcStructuralItem", id: 226, abs: true, children: [{ name: "IfcStructuralConnection", id: 265, abs: true, children: [{ name: "IfcStructuralCurveConnection", id: 534, abs: false }, { name: "IfcStructuralPointConnection", id: 533, abs: false }, { name: "IfcStructuralSurfaceConnection", id: 264, abs: false }] }, { name: "IfcStructuralMember", id: 225, abs: true, children: [{ name: "IfcStructuralCurveMember", id: 224, abs: false, children: [{ name: "IfcStructuralCurveMemberVarying", id: 227, abs: false }] }, { name: "IfcStructuralSurfaceMember", id: 420, abs: false, children: [{ name: "IfcStructuralSurfaceMemberVarying", id: 421, abs: false }] }] }] }, { name: "IfcAnnotation", id: 634, abs: false }, { name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcGrid", id: 564, abs: false }, { name: "IfcSpatialElement", id: 1273, abs: true, children: [{ name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcExternalSpatialStructureElement", id: 1175, abs: true, children: [{ name: "IfcExternalSpatialElement", id: 1174, abs: false }] }, { name: "IfcSpatialZone", id: 1275, abs: false }] }] };
-// noinspection JSDuplicatedDeclaration
-/**
+};const xProductInheritance = { name: "IfcProduct", id: 20, abs: true, children: [{ name: "IfcElement", id: 19, abs: true, children: [{ name: "IfcDistributionElement", id: 44, abs: false, children: [{ name: "IfcDistributionFlowElement", id: 45, abs: false, children: [{ name: "IfcDistributionChamberElement", id: 180, abs: false }, { name: "IfcEnergyConversionDevice", id: 175, abs: false, children: [{ name: "IfcAirToAirHeatRecovery", id: 1097, abs: false }, { name: "IfcBoiler", id: 1105, abs: false }, { name: "IfcBurner", id: 1109, abs: false }, { name: "IfcChiller", id: 1119, abs: false }, { name: "IfcCoil", id: 1124, abs: false }, { name: "IfcCondenser", id: 1132, abs: false }, { name: "IfcCooledBeam", id: 1141, abs: false }, { name: "IfcCoolingTower", id: 1142, abs: false }, { name: "IfcEngine", id: 1164, abs: false }, { name: "IfcEvaporativeCooler", id: 1166, abs: false }, { name: "IfcEvaporator", id: 1167, abs: false }, { name: "IfcHeatExchanger", id: 1187, abs: false }, { name: "IfcHumidifier", id: 1188, abs: false }, { name: "IfcTubeBundle", id: 1305, abs: false }, { name: "IfcUnitaryEquipment", id: 1310, abs: false }, { name: "IfcElectricGenerator", id: 1160, abs: false }, { name: "IfcElectricMotor", id: 1161, abs: false }, { name: "IfcMotorConnection", id: 1216, abs: false }, { name: "IfcSolarDevice", id: 1270, abs: false }, { name: "IfcTransformer", id: 1303, abs: false }] }, { name: "IfcFlowController", id: 121, abs: false, children: [{ name: "IfcElectricDistributionPoint", id: 242, abs: false }, { name: "IfcAirTerminalBox", id: 1096, abs: false }, { name: "IfcDamper", id: 1148, abs: false }, { name: "IfcFlowMeter", id: 1182, abs: false }, { name: "IfcValve", id: 1311, abs: false }, { name: "IfcElectricDistributionBoard", id: 1157, abs: false }, { name: "IfcElectricTimeControl", id: 1162, abs: false }, { name: "IfcProtectiveDevice", id: 1235, abs: false }, { name: "IfcSwitchingDevice", id: 1290, abs: false }] }, { name: "IfcFlowFitting", id: 467, abs: false, children: [{ name: "IfcDuctFitting", id: 1153, abs: false }, { name: "IfcPipeFitting", id: 1222, abs: false }, { name: "IfcCableCarrierFitting", id: 1111, abs: false }, { name: "IfcCableFitting", id: 1113, abs: false }, { name: "IfcJunctionBox", id: 1195, abs: false }] }, { name: "IfcFlowMovingDevice", id: 502, abs: false, children: [{ name: "IfcCompressor", id: 1131, abs: false }, { name: "IfcFan", id: 1177, abs: false }, { name: "IfcPump", id: 1238, abs: false }] }, { name: "IfcFlowSegment", id: 574, abs: false, children: [{ name: "IfcDuctSegment", id: 1154, abs: false }, { name: "IfcPipeSegment", id: 1223, abs: false }, { name: "IfcCableCarrierSegment", id: 1112, abs: false }, { name: "IfcCableSegment", id: 1115, abs: false }] }, { name: "IfcFlowStorageDevice", id: 371, abs: false, children: [{ name: "IfcTank", id: 1293, abs: false }, { name: "IfcElectricFlowStorageDevice", id: 1159, abs: false }] }, { name: "IfcFlowTerminal", id: 46, abs: false, children: [{ name: "IfcFireSuppressionTerminal", id: 1179, abs: false }, { name: "IfcSanitaryTerminal", id: 1262, abs: false }, { name: "IfcStackTerminal", id: 1277, abs: false }, { name: "IfcWasteTerminal", id: 1315, abs: false }, { name: "IfcAirTerminal", id: 1095, abs: false }, { name: "IfcMedicalDevice", id: 1212, abs: false }, { name: "IfcSpaceHeater", id: 1272, abs: false }, { name: "IfcAudioVisualAppliance", id: 1099, abs: false }, { name: "IfcCommunicationsAppliance", id: 1127, abs: false }, { name: "IfcElectricAppliance", id: 1156, abs: false }, { name: "IfcLamp", id: 1198, abs: false }, { name: "IfcLightFixture", id: 1199, abs: false }, { name: "IfcOutlet", id: 1219, abs: false }] }, { name: "IfcFlowTreatmentDevice", id: 425, abs: false, children: [{ name: "IfcInterceptor", id: 1193, abs: false }, { name: "IfcDuctSilencer", id: 1155, abs: false }, { name: "IfcFilter", id: 1178, abs: false }] }] }, { name: "IfcDistributionControlElement", id: 468, abs: false, children: [{ name: "IfcProtectiveDeviceTrippingUnit", id: 1236, abs: false }, { name: "IfcActuator", id: 1091, abs: false }, { name: "IfcAlarm", id: 1098, abs: false }, { name: "IfcController", id: 1139, abs: false }, { name: "IfcFlowInstrument", id: 1181, abs: false }, { name: "IfcSensor", id: 1264, abs: false }, { name: "IfcUnitaryControlElement", id: 1308, abs: false }] }] }, { name: "IfcElementComponent", id: 424, abs: true, children: [{ name: "IfcDiscreteAccessory", id: 423, abs: false }, { name: "IfcFastener", id: 535, abs: false, children: [{ name: "IfcMechanicalFastener", id: 536, abs: false }] }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }, { name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcMechanicalFastener", id: 536, abs: false }, { name: "IfcVibrationIsolator", id: 1312, abs: false }] }, { name: "IfcFeatureElement", id: 386, abs: true, children: [{ name: "IfcFeatureElementSubtraction", id: 499, abs: true, children: [{ name: "IfcEdgeFeature", id: 764, abs: true, children: [{ name: "IfcChamferEdgeFeature", id: 765, abs: false }, { name: "IfcRoundedEdgeFeature", id: 766, abs: false }] }, { name: "IfcOpeningElement", id: 498, abs: false, children: [{ name: "IfcOpeningStandardCase", id: 1217, abs: false }] }, { name: "IfcVoidingFeature", id: 1313, abs: false }] }, { name: "IfcFeatureElementAddition", id: 385, abs: true, children: [{ name: "IfcProjectionElement", id: 384, abs: false }] }, { name: "IfcSurfaceFeature", id: 1287, abs: false }] }, { name: "IfcBuildingElement", id: 26, abs: true, children: [{ name: "IfcBuildingElementComponent", id: 221, abs: true, children: [{ name: "IfcBuildingElementPart", id: 220, abs: false }, { name: "IfcReinforcingElement", id: 262, abs: true, children: [{ name: "IfcReinforcingBar", id: 571, abs: false }, { name: "IfcReinforcingMesh", id: 531, abs: false }, { name: "IfcTendon", id: 261, abs: false }, { name: "IfcTendonAnchor", id: 675, abs: false }] }] }, { name: "IfcFooting", id: 120, abs: false }, { name: "IfcPile", id: 572, abs: false }, { name: "IfcBeam", id: 171, abs: false, children: [{ name: "IfcBeamStandardCase", id: 1104, abs: false }] }, { name: "IfcColumn", id: 383, abs: false, children: [{ name: "IfcColumnStandardCase", id: 1126, abs: false }] }, { name: "IfcCurtainWall", id: 456, abs: false }, { name: "IfcDoor", id: 213, abs: false, children: [{ name: "IfcDoorStandardCase", id: 1151, abs: false }] }, { name: "IfcMember", id: 310, abs: false, children: [{ name: "IfcMemberStandardCase", id: 1214, abs: false }] }, { name: "IfcPlate", id: 351, abs: false, children: [{ name: "IfcPlateStandardCase", id: 1224, abs: false }] }, { name: "IfcRailing", id: 350, abs: false }, { name: "IfcRamp", id: 414, abs: false }, { name: "IfcRampFlight", id: 348, abs: false }, { name: "IfcRoof", id: 347, abs: false }, { name: "IfcSlab", id: 99, abs: false, children: [{ name: "IfcSlabElementedCase", id: 1268, abs: false }, { name: "IfcSlabStandardCase", id: 1269, abs: false }] }, { name: "IfcStair", id: 346, abs: false }, { name: "IfcStairFlight", id: 25, abs: false }, { name: "IfcWall", id: 452, abs: false, children: [{ name: "IfcWallStandardCase", id: 453, abs: false }, { name: "IfcWallElementedCase", id: 1314, abs: false }] }, { name: "IfcWindow", id: 667, abs: false, children: [{ name: "IfcWindowStandardCase", id: 1316, abs: false }] }, { name: "IfcBuildingElementProxy", id: 560, abs: false }, { name: "IfcCovering", id: 382, abs: false }, { name: "IfcChimney", id: 1120, abs: false }, { name: "IfcShadingDevice", id: 1265, abs: false }] }, { name: "IfcElementAssembly", id: 18, abs: false }, { name: "IfcFurnishingElement", id: 253, abs: false, children: [{ name: "IfcFurniture", id: 1184, abs: false }, { name: "IfcSystemFurnitureElement", id: 1291, abs: false }] }, { name: "IfcTransportElement", id: 416, abs: false }, { name: "IfcVirtualElement", id: 168, abs: false }, { name: "IfcElectricalElement", id: 23, abs: false }, { name: "IfcEquipmentElement", id: 212, abs: false }, { name: "IfcCivilElement", id: 1122, abs: false }, { name: "IfcGeographicElement", id: 1185, abs: false }] }, { name: "IfcPort", id: 179, abs: true, children: [{ name: "IfcDistributionPort", id: 178, abs: false }] }, { name: "IfcProxy", id: 447, abs: false }, { name: "IfcStructuralActivity", id: 41, abs: true, children: [{ name: "IfcStructuralAction", id: 40, abs: true, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false, children: [{ name: "IfcStructuralLinearActionVarying", id: 464, abs: false }] }, { name: "IfcStructuralPlanarAction", id: 39, abs: false, children: [{ name: "IfcStructuralPlanarActionVarying", id: 357, abs: false }] }, { name: "IfcStructuralPointAction", id: 356, abs: false }, { name: "IfcStructuralCurveAction", id: 1279, abs: false, children: [{ name: "IfcStructuralLinearAction", id: 463, abs: false }] }, { name: "IfcStructuralSurfaceAction", id: 1284, abs: false, children: [{ name: "IfcStructuralPlanarAction", id: 39, abs: false }] }] }, { name: "IfcStructuralReaction", id: 355, abs: true, children: [{ name: "IfcStructuralPointReaction", id: 354, abs: false }, { name: "IfcStructuralCurveReaction", id: 1280, abs: false }, { name: "IfcStructuralSurfaceReaction", id: 1285, abs: false }] }] }, { name: "IfcStructuralItem", id: 226, abs: true, children: [{ name: "IfcStructuralConnection", id: 265, abs: true, children: [{ name: "IfcStructuralCurveConnection", id: 534, abs: false }, { name: "IfcStructuralPointConnection", id: 533, abs: false }, { name: "IfcStructuralSurfaceConnection", id: 264, abs: false }] }, { name: "IfcStructuralMember", id: 225, abs: true, children: [{ name: "IfcStructuralCurveMember", id: 224, abs: false, children: [{ name: "IfcStructuralCurveMemberVarying", id: 227, abs: false }] }, { name: "IfcStructuralSurfaceMember", id: 420, abs: false, children: [{ name: "IfcStructuralSurfaceMemberVarying", id: 421, abs: false }] }] }] }, { name: "IfcAnnotation", id: 634, abs: false }, { name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcGrid", id: 564, abs: false }, { name: "IfcSpatialElement", id: 1273, abs: true, children: [{ name: "IfcSpatialStructureElement", id: 170, abs: true, children: [{ name: "IfcBuilding", id: 169, abs: false }, { name: "IfcBuildingStorey", id: 459, abs: false }, { name: "IfcSite", id: 349, abs: false }, { name: "IfcSpace", id: 454, abs: false }] }, { name: "IfcExternalSpatialStructureElement", id: 1175, abs: true, children: [{ name: "IfcExternalSpatialElement", id: 1174, abs: false }] }, { name: "IfcSpatialZone", id: 1275, abs: false }] }] };/**
 * Enumeration of product types.
 * @readonly
 * @enum {number}
@@ -1166,8 +1166,7 @@ const xProductType = {
     IFCSPACE: 454,
     IFCEXTERNALSPATIALELEMENT: 1174,
     IFCSPATIALZONE: 1275
-};
-/*
+};/*
 * This file has been generated by spacker.exe utility. Do not change this file manualy as your changes
 * will get lost when the file is regenerated. Original content is located in *.c files.
 */
@@ -1186,8 +1185,7 @@ const xState = {
     HIGHLIGHTED: 253,
     XRAYVISIBLE: 252,
     UNSTYLED: 225
-};
-function xTriangulatedShape() { }
+};function xTriangulatedShape() { }
 
 //this will get xBinaryReader on the current position and will parse it's content to fill itself with vertices, normals and vertex indices
 xTriangulatedShape.prototype.parse = function (binReader) {
@@ -1233,7 +1231,7 @@ xTriangulatedShape.prototype.parse = function (binReader) {
             const planarIndices = readIndex(3 * numTrianglesInFace);
             self.indices.set(planarIndices, iIndex);
 
-            for (let j = 0; j < numTrianglesInFace*3; j++) {
+            for (let j = 0; j < numTrianglesInFace * 3; j++) {
                 //add three identical normals because this is planar but needs to be expanded for WebGL
                 self.normals[iIndex * 2] = normal[0];
                 self.normals[iIndex * 2 + 1] = normal[1];
@@ -1278,8 +1276,7 @@ xTriangulatedShape.prototype.normals = [];
 
 //this function will get called when loading is finished.
 //This won't get called after parse which is supposed to happen in large operation.
-xTriangulatedShape.prototype.onloaded = function () { };
-/**
+xTriangulatedShape.prototype.onloaded = function () { };/**
 * This is constructor of the xBIM Viewer. It gets HTMLCanvasElement or string ID as an argument. Viewer will than be initialized
 * in the context of specified canvas. Any other argument will throw exception.
 * @name xViewer
@@ -1296,7 +1293,7 @@ function xViewer(canvas) {
         throw 'Canvas has to be defined';
     }
     this._canvas = null;
-    if (typeof(canvas.nodeName) !== 'undefined' && canvas.nodeName === 'CANVAS') {
+    if (typeof (canvas.nodeName) !== 'undefined' && canvas.nodeName === 'CANVAS') {
         this._canvas = canvas;
     }
     if (typeof (canvas) === 'string') {
@@ -1422,10 +1419,10 @@ function xViewer(canvas) {
 
     //detect floating point texture support
     this._fpt = (
-    gl.getExtension('OES_texture_float') ||
-    gl.getExtension('MOZ_OES_texture_float') ||
-    gl.getExtension('WEBKIT_OES_texture_float')
-  );
+        gl.getExtension('OES_texture_float') ||
+        gl.getExtension('MOZ_OES_texture_float') ||
+        gl.getExtension('WEBKIT_OES_texture_float')
+    );
 
 
     //set up DEPTH_TEST and BLEND so that transparent objects look right
@@ -1555,16 +1552,16 @@ xViewer.check = function () {
     //check WebGL support
     const canvas = document.createElement('canvas');
     if (!canvas) {
-      result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
+        result.errors.push("Browser doesn't have support for HTMLCanvasElement. This is critical.");
     } else {
         const gl = WebGLUtils.setupWebGL(canvas);
         if (gl === null) result.errors.push("Browser doesn't support WebGL. This is critical.");
         else {
             //check floating point extension availability
             const fpt = (
-              gl.getExtension('OES_texture_float') ||
-              gl.getExtension('MOZ_OES_texture_float') ||
-              gl.getExtension('WEBKIT_OES_texture_float')
+                gl.getExtension('OES_texture_float') ||
+                gl.getExtension('MOZ_OES_texture_float') ||
+                gl.getExtension('WEBKIT_OES_texture_float')
             );
             if (!fpt) result.warnings.push('Floating point texture extension is not supported. Performance of the viewer will be very bad. But it should work.');
 
@@ -1575,14 +1572,14 @@ xViewer.check = function () {
     }
 
     //check FileReader and Blob support
-    if (!window.File || !window.FileReader ||  !window.Blob)  result.errors.push("Browser doesn't support 'File', 'FileReader' or 'Blob' objects.");
+    if (!window.File || !window.FileReader || !window.Blob) result.errors.push("Browser doesn't support 'File', 'FileReader' or 'Blob' objects.");
 
     //check for typed arrays
     if (!window.Int32Array || !window.Float32Array) result.errors.push("Browser doesn't support TypedArrays. These are crucial for binary parsing and for comunication with GPU.");
 
     //check SVG support
     if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) {
-      result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
+        result.warnings.push("Browser doesn't support SVG. This is used for user interaction like interactive clipping. Functions using SVG shouldn't crash but they won't work as expected.");
     }
 
     //set boolean members for convenience
@@ -1689,7 +1686,7 @@ xViewer.prototype.resetStates = function (hideSpaces) {
 
     //hide spaces
     hideSpaces = typeof (hideSpaces) !== 'undefined' ? hideSpaces : true;
-    if (hideSpaces){
+    if (hideSpaces) {
         this._handles.forEach(function (handle) {
             handle.setState(xState.HIDDEN, xProductType.IFCSPACE);
         }, this);
@@ -1809,7 +1806,7 @@ xViewer.prototype.getProductType = function (prodId) {
 */
 xViewer.prototype.setCameraPosition = function (coordinates) {
     if (typeof (coordinates) === 'undefined') throw 'Parameter coordinates must be defined';
-    mat4.lookAt(this._mvMatrix, coordinates, this._origin, [0,0,1]);
+    mat4.lookAt(this._mvMatrix, coordinates, this._origin, [0, 0, 1]);
 };
 
 /**
@@ -1881,16 +1878,17 @@ xViewer.prototype.set = function (settings) {
 * You can load more than one model if they occupy the same space, use the same scale and have unique product IDs. Duplicated IDs won't affect
 * visualization itself but would cause unexpected user interaction (picking, zooming, ...)
 * @function xViewer#load
+* @param modelId
 * @param {String | Blob | File} model - Model has to be either URL to wexBIM file or Blob or File representing wexBIM file binary data.
 * @param tag - tag to be used to identify the model
 * @param progressCallback
 * @param appendOptions
 * @fires xViewer#loaded
 */
-xViewer.prototype.load = function (model, tag, progressCallback, appendOptions) {
+xViewer.prototype.load = function (modelId, model, tag, progressCallback, appendOptions) {
     if (appendOptions === undefined) appendOptions = null;
     if (typeof (model) === 'undefined') throw 'You have to specify model to load.';
-    if (typeof(model) !== 'string' && !(model instanceof Blob) && !(model instanceof File))
+    if (typeof (model) !== 'string' && !(model instanceof Blob) && !(model instanceof File))
         throw 'Model has to be specified either as a URL to wexBIM file or Blob object representing the wexBIM file.';
 
     const viewer = this;
@@ -1899,29 +1897,53 @@ xViewer.prototype.load = function (model, tag, progressCallback, appendOptions) 
         progressCallback('modelLoaderStage.rendering');
     }
 
+    if (modelId === undefined) {
+        modelId = xModelGeometry._instancesNum;
+        xModelGeometry._instancesNum++;
+    }
+
     // noinspection JSPotentiallyInvalidConstructorUsage
     const geometry = new xModelGeometry();
-    geometry.id = xModelGeometry._instancesNum;
+    geometry.id = modelId;
     geometry.onloaded = function () {
         viewer._addHandle(geometry, tag, appendOptions);
     };
     geometry.onerror = function (msg) {
         viewer._error(msg);
     };
-    geometry.load(model);
 
     if (appendOptions) {
-        xModelGeometry._appendedModels[geometry.id] = {
+        xModelGeometry._appendedModels[modelId] = {
+            model: model,
             options: appendOptions,
             productIdsMap: []
         };
     }
 
-    xModelGeometry._instancesNum++;
+    geometry.load(model);
+    return geometry;
 };
 
-xViewer.prototype.append = function (model, tag, options) {
-    this.load(model, tag, undefined, options);
+xViewer.prototype.append = function (modelId, model, tag, options) {
+    return this.load(modelId, model, tag, undefined, options);
+};
+
+xViewer.prototype.setModelPosition = function (modelId, params) {
+    let handle = this._handles.filter(function (h) { return h._model.id === modelId }).pop();
+    if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist.";
+
+    //remove old model
+    this.unload(modelId);
+
+    const appendedModel = xModelGeometry._appendedModels[modelId];
+    const paramsMerged = Object.assign(appendedModel.options, params);
+
+    if (paramsMerged.hasOwnProperty('onLoad')) {
+        paramsMerged.onLoad = null;
+    }
+
+    //add a new model with new parameters
+    this.append(modelId, appendedModel.model, undefined, paramsMerged);
 };
 
 //this is a private function used to add loaded geometry as a new handle and to set up camera and
@@ -1982,7 +2004,7 @@ xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
     if (appendOptions) {
         eventName = 'appended';
 
-        if (appendOptions.color !== undefined) {
+        if (appendOptions.hasOwnProperty('color')) {
             if (appendOptions.color[3] === undefined) {
                 appendOptions.color[3] = 255;
             }
@@ -1998,6 +2020,10 @@ xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
                 }
             }
         }
+
+        if (appendOptions.hasOwnProperty('onLoad') && appendOptions.onLoad !== null) {
+            appendOptions.onLoad();
+        }
     }
 
     viewer._fire(eventName, { id: handle.id, tag: tag, geometry: geometry });
@@ -2011,7 +2037,7 @@ xViewer.prototype._addHandle = function (geometry, tag, appendOptions) {
  * @param {Number} modelId - ID of the model which you can get from {@link xViewer#event:loaded loaded} event.
  */
 xViewer.prototype.unload = function (modelId) {
-    let handle = this._handles.filter(function (h) { return h.id === modelId }).pop();
+    let handle = this._handles.filter(function (h) { return h._model.id === modelId }).pop();
     if (typeof (handle) === "undefined") throw "Model with id: " + modelId + " doesn't exist or was unloaded already.";
 
     //stop for start so it doesn't interfere with the rendering loop
@@ -2026,7 +2052,6 @@ xViewer.prototype.unload = function (modelId) {
     handle.unload();
     handle = null;
 };
-
 
 //this function should be only called once during initialization
 //or when shader set-up changes
@@ -2138,7 +2163,7 @@ xViewer.prototype._initMouseEvents = function () {
         * @type {object}
         * @param {Number} id - product ID of the element or null if there wasn't any product under mouse
         */
-        viewer._fire('mouseDown', {id: id});
+        viewer._fire('mouseDown', { id: id });
 
         //keep information about the mouse button
         switch (event.button) {
@@ -2178,7 +2203,7 @@ xViewer.prototype._initMouseEvents = function () {
 
                 if (appendedModel.productIdsMap.indexOf(id) !== -1) {
                     if (appendedModel.options.onClick) {
-                      appendedModel.options.onClick();
+                        appendedModel.options.onClick();
                     }
 
                     return;
@@ -2200,7 +2225,7 @@ xViewer.prototype._initMouseEvents = function () {
             * @type {object}
             * @param {Number} id - product ID of the element or null if there wasn't any product under mouse
             */
-            if(!handled) viewer._fire('pick', {id : id});
+            if (!handled) viewer._fire('pick', { id: id });
         }
 
         viewer._enableTextSelection();
@@ -2323,7 +2348,7 @@ xViewer.prototype._initMouseEvents = function () {
 
                 // "deltaY < 0" because the limit applies only when zooming out
                 if (Math.abs(zoomRatio) >= maxZoomRation && deltaY < 0) {
-                  return;
+                    //return;
                 }
 
                 mat4.translate(transform, transform, [0, 0, zoomRatio]);
@@ -2358,7 +2383,7 @@ xViewer.prototype._initMouseEvents = function () {
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('mousemove', handleMouseMove, true);
 
-    this._canvas.addEventListener('mousemove', function() {
+    this._canvas.addEventListener('mousemove', function () {
         viewer._userAction = true;
     }, true);
 
@@ -2412,7 +2437,7 @@ xViewer.prototype.draw = function () {
 
         case 'orthogonal':
             mat4.ortho(this._pMatrix, this.orthogonalCamera.left, this.orthogonalCamera.right, this.orthogonalCamera.bottom,
-                       this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
+                this.orthogonalCamera.top, this.orthogonalCamera.near, this.orthogonalCamera.far);
             break;
 
         default:
@@ -2432,10 +2457,10 @@ xViewer.prototype.draw = function () {
 
     //update highlighting colour
     gl.uniform4fv(this._highlightingColourUniformPointer, new Float32Array(
-        [this.highlightingColour[0]/255.0,
-        this.highlightingColour[1]/255.0,
-        this.highlightingColour[2]/255.0,
-        this.highlightingColour[3]/255.0]));
+        [this.highlightingColour[0] / 255.0,
+        this.highlightingColour[1] / 255.0,
+        this.highlightingColour[2] / 255.0,
+        this.highlightingColour[3] / 255.0]));
 
     //check for x-ray mode
     if (this.renderingMode === 'x-ray') {
@@ -2569,7 +2594,7 @@ xViewer.prototype.show = function (type) {
         //top and bottom are different because these are singular points for look-at function if heading is [0,0,1]
         case 'top':
             //only move to origin and up (negative values because we move camera against model)
-            mat4.translate(this._mvMatrix, mat4.create(), [origin[0] * -1.0, origin[1] * -1.0, (distance + origin[2])* -1.0 ]);
+            mat4.translate(this._mvMatrix, mat4.create(), [origin[0] * -1.0, origin[1] * -1.0, (distance + origin[2]) * -1.0]);
             return;
         case 'bottom':
             //only move to origin and up and rotate 180 degrees around Y axis
@@ -2606,7 +2631,7 @@ xViewer.prototype._error = function (msg) {
     * @type {object}
     * @param {string} message - Error message
     */
-    this._fire('error', {message: msg});
+    this._fire('error', { message: msg });
 };
 
 //this renders the colour coded model into the memory buffer
@@ -2761,7 +2786,7 @@ xViewer.prototype.start = function (id) {
             * @event xViewer#fps
             * @type {Number}
             */
-            viewer._fire('fps', Math.floor(fps) );
+            viewer._fire('fps', Math.floor(fps));
         }
 
         if (viewer._isRunning) {
@@ -2861,7 +2886,7 @@ xViewer.prototype._enableTextSelection = function () {
     document.documentElement.style['user-select'] = 'text';
 };
 
-xViewer.prototype._getSVGOverlay = function() {
+xViewer.prototype._getSVGOverlay = function () {
     //check support for SVG
     if (!document.implementation.hasFeature("http://www.w3.org/TR/SVG11/feature#BasicStructure", "1.1")) return false;
     const ns = "http://www.w3.org/2000/svg";
@@ -2913,11 +2938,11 @@ xViewer.prototype._getSVGOverlay = function() {
 */
 xViewer.prototype.getClip = function () {
     const cp = this.clippingPlane;
-    if (cp.every(function(e) { return e === 0; })) {
+    if (cp.every(function (e) { return e === 0; })) {
         return [[0, 0, 0], [0, 0, 0]];
     }
 
-    const normal = vec3.normalize([0.0 ,0.0, 0.0], [cp[0], cp[1], cp[2]]);
+    const normal = vec3.normalize([0.0, 0.0, 0.0], [cp[0], cp[1], cp[2]]);
 
     //test if the last clipping point fits in the condition
     const lp = this._lastClippingPoint;
@@ -2931,7 +2956,7 @@ xViewer.prototype.getClip = function () {
     const y = cp[1] !== 0 ? -1.0 * cp[3] / cp[1] : 0.0;
     const z = cp[2] !== 0 ? -1.0 * cp[3] / cp[2] : 0.0;
 
-    return [[x,y,z], normal];
+    return [[x, y, z], normal];
 };
 
 /**
@@ -3032,7 +3057,7 @@ xViewer.prototype.clip = function (point, normal) {
         vec3.transformMat4(B, [x1, y1, 1], inverse); //far clipping plane
 
         //Compute third point on plane
-        const angle = position.angle * Math.PI / 180.0 ;
+        const angle = position.angle * Math.PI / 180.0;
         const x2 = x1 + Math.cos(angle);
         const y2 = y1 + Math.sin(angle);
 
@@ -3079,13 +3104,13 @@ xViewer.prototype.clip = function (point, normal) {
     window.addEventListener('mouseup', handleMouseUp, true);
     window.addEventListener('mousemove', handleMouseMove, true);
 
-    this.stopClipping = function() {
+    this.stopClipping = function () {
         svg.parentNode.removeChild(svg);
         svg.removeEventListener('mousedown', handleMouseDown, true);
         window.removeEventListener('mouseup', handleMouseUp, true);
         window.removeEventListener('mousemove', handleMouseMove, true);
         //clear also itself
-        viewer.stopClipping = function() {};
+        viewer.stopClipping = function () { };
     };
 };
 
@@ -3095,7 +3120,7 @@ xViewer.prototype.clip = function (point, normal) {
 * @function xViewer#stopClipping
 */
 //this is only a placeholder. It is actually created only when interactive clipping is active.
-xViewer.prototype.stopClipping = function() {};
+xViewer.prototype.stopClipping = function () { };
 
 /**
 * This method will cancel any clipping plane if it is defined. Use {@link xViewer#clip clip()}
@@ -3112,7 +3137,8 @@ xViewer.prototype.unclip = function () {
       * @type {object}
       */
     this._fire('unclipped', {});
-};/*
+};
+/*
  * Copyright 2010, Google Inc.
  * All rights reserved.
  *

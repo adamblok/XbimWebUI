@@ -10,7 +10,10 @@ xBinaryReader.prototype.load = function (source) {
     this._position = 0;
     const self = this;
 
-    if (typeof (source) === 'undefined' || source === null) throw 'Source must be defined';
+    if (typeof (source) === 'undefined' || source === null) {
+        throw 'Source must be defined';
+    }
+
     if (typeof (source) === 'string') {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", source, true);
@@ -21,6 +24,7 @@ xBinaryReader.prototype.load = function (source) {
                     if (fReader.result) {
                         //set data buffer for next processing
                         self._buffer = fReader.result;
+
                         //do predefined processing of the data
                         if (self.onloaded) {
                             self.onloaded();
@@ -29,10 +33,11 @@ xBinaryReader.prototype.load = function (source) {
                 };
                 fReader.readAsArrayBuffer(xhr.response);
             }
+
             //throw exception as a warning
             if (xhr.readyState === 4 && xhr.status !== 200) {
                 const msg = 'Failed to fetch binary data from server. Server code: ' + xhr.status + '.' +
-                            'This might be due to CORS policy of your browser if you run this as a local file.';
+                    'This might be due to CORS policy of your browser if you run this as a local file.';
 
                 if (self.onerror) self.onerror(msg);
                 throw msg;
@@ -41,8 +46,7 @@ xBinaryReader.prototype.load = function (source) {
 
         xhr.responseType = 'blob';
         xhr.send();
-    }
-    else if (source instanceof Blob || source instanceof File) {
+    } else if (source instanceof Blob || source instanceof File) {
         const fReader = new FileReader();
         fReader.onloadend = function () {
             if (fReader.result) {
@@ -55,8 +59,7 @@ xBinaryReader.prototype.load = function (source) {
             }
         };
         fReader.readAsArrayBuffer(source);
-    }
-    else if (source instanceof ArrayBuffer) {
+    } else if (source instanceof ArrayBuffer) {
         this._buffer = source;
     }
 };
@@ -144,13 +147,14 @@ xBinaryReader.prototype.readPoint = function (count) {
     return count === 1 ? result[0] : result;
 };
 
+// noinspection JSPotentiallyInvalidConstructorUsage
 xBinaryReader.prototype.readRgba = function (count) {
     if (typeof (count) === "undefined") count = 1;
 
     const values = this.readByte(count * 4);
     const result = new Array(count);
 
-    for (let i = 0; i < count ; i++) {
+    for (let i = 0; i < count; i++) {
         const offset = i * 4;
         result[i] = new Uint8Array(values.buffer, offset, 4);
     }

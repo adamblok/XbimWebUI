@@ -4,6 +4,7 @@
 //gl: WebGL context
 //model: xModelGeometry
 //fpt: bool (floating point texture support)
+
 function xModelHandle(gl, model, fpt) {
     if (typeof (gl) === 'undefined' || typeof (model) === 'undefined' || typeof (fpt) === 'undefined') {
         throw 'WebGL context and geometry model must be specified';
@@ -104,7 +105,6 @@ xModelHandle.prototype.setActive = function (pointers) {
     gl.activeTexture(gl.TEXTURE4);
     gl.bindTexture(gl.TEXTURE_2D, this.stateStyleTexture);
 
-
     //set attributes and uniforms
     gl.bindBuffer(gl.ARRAY_BUFFER, this.normalBuffer);
     gl.vertexAttribPointer(pointers.normalAttrPointer, 2, gl.UNSIGNED_BYTE, false, 0, 0);
@@ -175,7 +175,7 @@ xModelHandle.prototype.getProductMap = function (ID) {
     const map = this._model.productMap[ID];
 
     if (typeof (map) !== "undefined") {
-      return map;
+        return map;
     }
 
     return null;
@@ -376,7 +376,7 @@ xModelHandle.prototype.resetStyles = function () {
     this._bufferData(this.stateBuffer, this._model.states);
 };
 
-xModelHandle.prototype.getModelState = function() {
+xModelHandle.prototype.getModelState = function () {
     const result = [];
     const products = this._model.productMap;
 

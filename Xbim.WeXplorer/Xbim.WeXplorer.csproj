@@ -22,6 +22,7 @@
     <IISExpressUseClassicPipelineMode />
     <TypeScriptToolsVersion>1.0</TypeScriptToolsVersion>
     <UseGlobalApplicationHostFile />
+    <Use64BitIISExpress />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -71,17 +72,6 @@
     <Content Include="Browser\xbim-visual-model.debug.js" />
     <Content Include="Browser\xbim-visual-property.debug.js" />
     <Content Include="Browser\xbim-visual-templates.debug.js" />
-    <Content Include="Build\xbim-browser.js" />
-    <Content Include="Build\xbim-browser.min.js" />
-    <Content Include="Build\xbim-loader.debug.js" />
-    <Content Include="Build\xbim-loader.min.js" />
-    <Content Include="Build\xbim-navigation-cube.js" />
-    <Content Include="Build\xbim-navigation-cube.min.js" />
-    <Content Include="Build\xbim-navigation-home.js" />
-    <Content Include="Build\xbim-navigation-home.min.js" />
-    <Content Include="Build\xbim-viewer.debug.bundle.js" />
-    <Content Include="Build\xbim-viewer.min.bundle.js" />
-    <Content Include="Build\xbim-viewer.min.js" />
     <Content Include="index.html" />
     <Content Include="Libs\gl-matrix.min.js" />
     <Content Include="Libs\jquery-ui-styles\images\ui-bg_flat_0_aaaaaa_40x100.png" />
@@ -111,7 +101,6 @@
     <Content Include="Libs\jstree-styles\style.min.css" />
     <Content Include="Libs\jstree-styles\throbber.gif" />
     <Content Include="Libs\query-string.js" />
-    <Content Include="Libs\webgl-utils.min.js" />
     <Content Include="Plugins\NavigationCube\cube_fshader.c" />
     <Content Include="Plugins\NavigationCube\cube_vshader.c" />
     <Content Include="Plugins\NavigationCube\xbim-navigation-cube-shaders.debug.js" />
@@ -168,13 +157,11 @@
     <Content Include="Resources\doctemplate\static\scripts\xbim-viewer.debug.bundle.js" />
     <Content Include="simpleviewer.html" />
     <Content Include="Viewer\fragment_shader.c" />
-    <Content Include="Build\gl-matrix.min.js" />
     <Content Include="Libs\gl-matrix.js" />
     <Content Include="Viewer\xbim-product-inheritance.debug.js" />
     <Content Include="Viewer\vertex_shader.c" />
     <Content Include="Viewer\vertex_shader_noFPT.c" />
     <Content Include="Libs\webgl-utils.js" />
-    <Content Include="Build\webgl-utils.min.js" />
     <Content Include="Viewer\xbim-binary-reader.debug.js" />
     <Content Include="Resources\xbim-disclaimer.txt" />
     <Content Include="Viewer\xbim-model-geometry.debug.js" />
@@ -264,6 +251,9 @@
     <None Include="Web.Release.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Build\" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

@@ -125,7 +125,7 @@ xModelGeometry.prototype.parse = function (binReader) {
     }
 
     const styleMap = [];
-    styleMap.getStyle = function(id) {
+    styleMap.getStyle = function (id) {
         for (let i = 0; i < this.length; i++) {
             const item = this[i];
             if (item.id === id) return item;
@@ -154,7 +154,7 @@ xModelGeometry.prototype.parse = function (binReader) {
     const modelId = this.id;
     const appendedModel = xModelGeometry._appendedModels[modelId];
 
-    for (let i = 0; i < numProducts ; i++) {
+    for (let i = 0; i < numProducts; i++) {
         let productLabel = br.readInt32();
 
         if (appendedModel) {
@@ -242,8 +242,8 @@ xModelGeometry.prototype.parse = function (binReader) {
 
             //switch spaces and openings off by default
             const state = map.type === typeEnum.IFCSPACE || map.type === typeEnum.IFCOPENINGELEMENT ?
-                  stateEnum.HIDDEN :
-                  0xFF; //0xFF is for the default state
+                stateEnum.HIDDEN :
+                0xFF; //0xFF is for the default state
 
             //fix indices to right absolute position. It is relative to the shape.
             for (let i = 0; i < shapeGeom.indices.length; i++) {

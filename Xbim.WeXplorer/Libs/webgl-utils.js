@@ -57,7 +57,7 @@
  * visible.
  */
 
-WebGLUtils = function() {
+var WebGLUtils = function() {
 
 /**
  * Creates the HTLM for a failure message
@@ -173,3 +173,4 @@ window.requestAnimFrame = (function() {
          };
 })();
 
+module.exports = WebGLUtils;
