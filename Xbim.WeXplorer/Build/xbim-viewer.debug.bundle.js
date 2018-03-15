@@ -1288,7 +1288,7 @@ xTriangulatedShape.prototype.onloaded = function () { };/**
 *
 * @param {string | HTMLCanvasElement} canvas - string ID of the canvas or HTML canvas element.
 */
-function xViewer(canvas) {
+function xViewer(canvas, preserveDrawingBuffer) {
     if (typeof (canvas) === 'undefined') {
         throw 'Canvas has to be defined';
     }
@@ -1302,6 +1302,8 @@ function xViewer(canvas) {
     if (this._canvas == null) {
         throw 'You have to specify canvas either as an ID of HTML element or the element itself';
     }
+
+    preserveDrawingBuffer = typeof (preserveDrawingBuffer) !== 'undefined' ? preserveDrawingBuffer : false;
 
     /**
     * This is a structure that holds settings of perspective camera.
@@ -1407,8 +1409,15 @@ function xViewer(canvas) {
 
     this._lastClippingPoint = [0, 0, 0];
 
+    var webGLAttribs = undefined;
+    if (preserveDrawingBuffer) {
+        webGLAttribs = {
+            preserveDrawingBuffer: true
+        };
+    }
+
     //*************************** Do all the set up of WebGL **************************
-    const gl = WebGLUtils.setupWebGL(this._canvas);
+    var gl = WebGLUtils.setupWebGL(this._canvas, webGLAttribs);
 
     //do not even initialize this object if WebGL is not supported
     if (!gl) {
