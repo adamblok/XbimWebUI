@@ -151,7 +151,11 @@ xModelHandle.prototype.draw = function (mode) {
     }
 
     if (mode === "transparent") {
-        gl.drawArrays(gl.TRIANGLES, this._model.transparentIndex, this.count - this._model.transparentIndex);
+        const transparentIndexCount = this.count - this._model.transparentIndex;
+
+        if (transparentIndexCount > 0) {
+            gl.drawArrays(gl.TRIANGLES, this._model.transparentIndex, transparentIndexCount);
+        }
     }
 };
 
